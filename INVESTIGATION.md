@@ -78,11 +78,11 @@ All three must be replaced with output from our `./review`.
 
 ## 4. Bugs in the starter code
 
-I found these by reading the code. I did not run it.
+I found these by reading the code, then confirmed them by running the starter. The results are in the "Verification run" section of `SCORECARD.md`.
 
 `backend/app/scheduler.py`
 
-- It ignores owners. On the stored Lantern review it would report day 38 and say the plan is on time (by hand). With that review's durations the true answer is at least 48 days, and with the plan's durations at least 52.
+- It ignores owners. On the stored Lantern review it would report day 38 and say the plan is on time (confirmed by running it). With that review's durations the true answer is at least 48 days, and with the plan's durations at least 52.
 - It has no cycle detection. `end_of` recurses forever on the Harbour Run cycle, which raises `RecursionError`, returns a 500 and breaks the page for that plan.
 - It has no memoisation. The recursion repeats work, which can grow exponentially on dense dependency graphs and risks the 10-second limit at 60 tasks.
 - It does not validate input. Duplicate ids, unknown ids, durations below 1 and more than 60 tasks give a 500 or a wrong result instead of a 4xx.
@@ -124,7 +124,7 @@ Tests: there are three trivial tests. None covers owners, cycles, input validati
 - I extracted the zip into an isolated folder and read every text file.
 - I scanned for non-ASCII and invisible characters, markup, and common injection phrases.
 - I checked the stored quotes with a small script that collapses whitespace, and looked at both images.
-- I did not run the starter code, because running downloaded code was blocked here. The crash and end-day figures come from reading the code and doing the arithmetic by hand.
+- I then ran the starter in Docker, natively on Windows and in a browser, which confirmed the crash and end-day figures. See the "Verification run" section of `SCORECARD.md`. The review command was not run, because it needs an API key.
 - The plans we have not seen may contain other traps.
 
 ## 7. What this means for the build

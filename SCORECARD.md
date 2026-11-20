@@ -2,7 +2,7 @@
 
 20 Nov 2026. This scores the starter as received, before any work on it.
 
-- **Method:** I read every file and checked the code against `docs/contracts.md`. I did not run any code, because running downloaded code was blocked in this session. Claims about behaviour come from reading the code and tracing it by hand.
+- **Method:** I read every file and checked the code against `docs/contracts.md`. Then I ran the starter to confirm the claims: in its own Docker image, natively on Windows, and in a browser. The "Verification run" section lists every result. Only the review command was not run, because it needs an API key.
 - **Benchmarks:** three of your other projects, facet, TPF3-MP and X4-Online (see the benchmarks section).
 - **Scale:** 0 to 10 for each dimension, where 10 is the standard of your best projects. The overall score is a weighted average. AI-agent maintainability and correctness carry the most weight.
 
@@ -32,9 +32,50 @@ Size, in non-blank lines:
 - **Tests:** 24 lines.
 - **Contract checker:** 192 lines, which is more than the backend and frontend together.
 
+## Verification run
+
+On 20 Nov 2026 I ran the starter at commit `ea851f9` in three ways:
+
+- **In its own Docker image:** Linux, Python 3.11.18. The unpinned requirements installed fastapi 0.165.0, starlette 1.10.0, pydantic 2.14.4, uvicorn 0.54.0 and anthropic 2.12.0.
+- **Natively on Windows** with Python 3.12, for the two Windows-only claims.
+- **In the built-in browser,** for the page.
+
+Each result carries a label, following TPF3-MP's investigation template:
+
+- **CONFIRMED:** seen directly.
+- **MEASURED:** timed.
+- **INFERRED:** reasoned from the code or the measurements, not seen.
+
+| Claim | Result | Label |
+|---|---|---|
+| The starter's tests pass | 3 passed in 0.27 s | CONFIRMED |
+| It fails its own contract check | `check_contract.py schedule` exits 1 with "tasks A and C overlap for owner Ann" and "tasks B and C overlap for owner Ann" | CONFIRMED |
+| Tasks with the same owner overlap | Two 3-day tasks for Ann both run on days 0 to 3 | CONFIRMED |
+| Cycles crash it | A↔B, a self-dependency and the Harbour Run plan all return a 500 with `RecursionError` | CONFIRMED |
+| Bad input gives a 500, not a 4xx | Missing `deadline_day` and an unknown dependency raise `KeyError`; an unknown plan id raises `FileNotFoundError`. All return the plain-text "Internal Server Error" | CONFIRMED |
+| A body that isn't a JSON object | 422 with a JSON body. This is FastAPI's own check, and the only bad input handled correctly | CONFIRMED |
+| A null deadline crashes it | 500 with `TypeError: '<=' not supported between instances of 'int' and 'NoneType'` | CONFIRMED |
+| Bad input is accepted silently | Duplicate ids come back twice; durations of 0 and −3 are accepted (end day −3); 61 tasks are accepted | CONFIRMED |
+| Long chains crash it | A 1,500-task chain returns a 500 with `RecursionError` | CONFIRMED |
+| Run time grows exponentially | Layered graph: 32 tasks took 0.13 s, 36 tasks 0.48 s and 40 tasks 1.88 s, doubling with each layer. The 60-task request had not answered after 15 s, and the container stayed at 100% CPU after the client gave up | MEASURED |
+| How long that 60-task request takes | About 32 minutes (1.88 s × 2^10) | INFERRED |
+| About 40 such requests block the server | Not tested; based on the default thread pool of 40 | INFERRED |
+| Lantern Festival is reported on time | The API returns end day 38 with `meets_deadline: true`, and the page says "Meets deadline: yes" | CONFIRMED |
+| Spring Market finishes on day 18 | The API returns end day 18 | CONFIRMED |
+| Harbour Run breaks the page | A blank page under the dropdown with no message. The console shows the 500 and a JSON parse error | CONFIRMED |
+| The page is a raw dump | The plan sits in a `<pre>` block and the review is raw JSON | CONFIRMED |
+| £ is mis-decoded on Windows | The default encoding is cp1252, so `read_text()` returns "Â£" | CONFIRMED |
+| Paths can escape `data/` on Windows | `GET /api/plans/..%5C..%5Ccanary-outside-data` returned a canary `.md` and `.json` pair placed outside `data/`, deleted afterwards. With forward slashes the same request gets a 404 | CONFIRMED |
+| The container runs as root and ships test dependencies | `id -un` returns root; pytest and httpx are installed | CONFIRMED |
+| `make` is missing on Windows | `make` was not found on this machine | CONFIRMED |
+| The Dockerfile builds | It builds cleanly, including `tsc --noEmit` for the frontend | CONFIRMED |
+| The review accepts any JSON and crashes on non-JSON | Not run, because it needs an API key | INFERRED |
+
+One correction to the first draft: I had estimated the 60-task request would take hours. The measurements put it at about half an hour on this machine. The scores are unchanged.
+
 ## 1. Correctness against the contracts: 1/10
 
-These problems come from tracing the code by hand.
+Running the starter confirmed all of these except the review's behaviour.
 
 - **It fails its own example.** The bundled `examples/schedule-request.json` would fail `check_contract.py`. The scheduler ignores owners, so Ann's tasks A (days 0 to 3) and C (days 0 to 4) overlap, and so do B (3 to 5) and C.
 - **Cycles crash it.** On a cycle, as in Harbour Run, `end_of` recurses until Python raises `RecursionError`, so the endpoint returns a 500 instead of `status: "cycle"`.
@@ -43,7 +84,7 @@ These problems come from tracing the code by hand.
   - Duplicate ids are accepted and appear twice in the output.
   - It accepts `duration_days` below 1 and more than 60 tasks.
 - **A null deadline crashes it.** If a review has `deadline_day: null`, `end_day <= deadline_day` raises `TypeError`.
-- **It can blow the 10-second limit.** There is no memoisation. Take a valid 60-task request built as 30 layers of 2 tasks, where each task depends on both tasks in the layer before. That takes about 2^30 recursive calls for each task in the last layer, far past 10 seconds.
+- **It can blow the 10-second limit.** There is no memoisation. Take a valid 60-task request built as 30 layers of 2 tasks, where each task depends on both tasks in the layer before. That takes about 2^30 recursive calls for each task in the last layer. In the measurements, the time doubled with each layer, and the 60-task request had not answered after 15 seconds. By extrapolation it takes about 32 minutes.
 - **The review accepts anything.** `./review` writes whatever JSON the model returns and exits 0, even when the shape or the quotes are wrong. A reply that isn't valid JSON makes it crash with a traceback.
 
 What does work:
@@ -109,7 +150,7 @@ What's weak:
 
 ## 5. Tests and verification: 2/10
 
-- **What exists:** three tests in 24 lines. One checks that the plans are listed, one schedules a single task, and one checks a single dependency.
+- **What exists:** three tests in 24 lines, which all pass in 0.27 s. One checks that the plans are listed, one schedules a single task, and one checks a single dependency.
 - **Not covered:**
   - owners, cycles, and validation with 4xx responses;
   - null deadlines and the contract shape;
@@ -138,11 +179,11 @@ What's weak:
 | Severity | Issue |
 |---|---|
 | High | **Prompt injection.** The plan text goes straight into the prompt, and the stored Harbour Run review shows the attack working. In this product, that lets a committee write its own approval into its plan. |
-| Medium | **CPU exhaustion without logging in.** `/api/schedule` has no size limit, and the scheduling is exponential. One valid-looking 60-task request can tie up a worker thread for hours, and about 40 of them would use up the default thread pool. |
+| Medium | **CPU exhaustion without logging in.** `/api/schedule` has no size limit, and the scheduling is exponential. One valid 60-task request keeps a CPU core at 100% for about half an hour (extrapolated from measurements). About 40 of them would probably use up the default thread pool (not tested). |
 | Medium | **No input validation.** Anything unexpected becomes a 500. |
 | Low | **Loose pinning.** Python dependencies are neither pinned nor hashed, and the base images are pinned by tag, not by digest. |
 | Low | **Container setup.** The container runs as root and ships the test dependencies, pytest and httpx. |
-| Low | **No allow-list for `plan_id`.** On Linux this is safe, because the route doesn't match `/`. On a Windows host, an encoded backslash might read files outside `data/`, but only where a matching `.md` and `.json` both exist. I have not tested this. |
+| Low | **No allow-list for `plan_id`.** On Linux this is safe: forward slashes get a 404. On a Windows host, an encoded backslash (`..%5C..%5C`) reads files outside `data/` wherever a matching `.md` and `.json` both exist. I confirmed this with a temporary canary pair. |
 | Note | **No authentication.** That is fine for a read-only demo, but it becomes a problem once Nora can save corrections. |
 
 What it does right:
@@ -161,7 +202,8 @@ What it does right:
   - Remarks are not linked to where they come from in the plan.
   - There is no way to correct the review and see what changes.
 - **It ignores BRAND.md** and doesn't handle a cycle or a missing deadline.
-- **It gives a wrong verdict.** On the stored Lantern review it would tell her the plan is on time, finishing on day 38 by my hand count. It is really at least 7 days late.
+- **It gives a wrong verdict.** On the stored Lantern review the page says "Meets deadline: yes", with an end day of 38. The plan is really at least 7 days late.
+- **Harbour Run shows a blank page.** The 500 caused by the cycle is swallowed, and the only trace is an error in the browser console.
 
 ## 9. Ops and reproducibility: 5/10
 
