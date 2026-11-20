@@ -1,7 +1,9 @@
 # syntax=docker/dockerfile:1
 # One container serves the page and the API on $PORT (8000 by default).
 
-ARG NODE_IMAGE=node:24-bookworm-slim
+# Pinned by digest so every build starts from the same image. Dependabot
+# proposes updates (.github/dependabot.yml).
+ARG NODE_IMAGE=node:24-bookworm-slim@sha256:dc26ae92c9fb15cf6b1d63e20f0944b2efe0f115b20e00be48fb23fceb061c54
 
 FROM ${NODE_IMAGE} AS deps
 WORKDIR /app

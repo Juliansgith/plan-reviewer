@@ -1,0 +1,93 @@
+# Every push and pull request: the same checks as `npm run check`, plus the
+# browser tests, ./review on Node 20, and the Docker image as the graders
+# would run it. Actions are pinned by commit SHA; Dependabot updates them.
+name: CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    name: Format, lint, types, tests, build, contract
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: "3.12"
+      - run: npm ci
+      - run: npm run check
+      - run: npx tsx scripts/bench-scheduler.ts 100 2000
+
+  e2e:
+    name: Browser tests and accessibility
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: npm run build
+      - run: npm run test:e2e
+      - if: failure()
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
+        with:
+          name: playwright-report
+          path: playwright-report
+          retention-days: 7
+
+  review-on-node-20:
+    name: ./review on Node 20
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: "20.9"
+          cache: npm
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: "3.12"
+      - run: npm ci
+      - run: node scripts/smoke-review.mjs
+
+  docker:
+    name: Docker image, locked down, against the contract
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version-file: .nvmrc
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: "3.12"
+      - run: docker build -t plan-reviewer .
+      - name: Run read-only, without capabilities, with PORT=8000
+        run: |
+          docker run -d --name app --read-only --tmpfs /tmp --cap-drop ALL \
+            --security-opt no-new-privileges -e PORT=8000 -p 8000:8000 plan-reviewer
+          for i in $(seq 1 60); do curl -fs http://127.0.0.1:8000/api/health && break; sleep 1; done
+          test "$(docker exec app id -un)" = node
+      - run: CONTRACT_BASE_URL=http://127.0.0.1:8000 node scripts/contract-check.mjs
+      - if: always()
+        run: docker logs app

@@ -32,6 +32,8 @@ Environment:
 Exit codes: 0 written, 1 no usable review, 2 usage or setup problem,
 3 model service problem. No file is written unless the exit code is 0.`;
 
+const count = (n: number, word: string) => `${n} ${word}${n === 1 ? "" : "s"}`;
+
 export async function runReviewCommand(
   args: string[],
   env: Record<string, string | undefined>,
@@ -114,7 +116,7 @@ export async function runReviewCommand(
   const blockers = review.findings.filter((finding) => finding.severity === "blocker").length;
   const cost = review.meta.cost_usd === null ? "" : `, cost $${review.meta.cost_usd.toFixed(4)}`;
   io.stderr(
-    `Wrote ${outPath}: ${review.tasks.length} tasks, ${review.findings.length} findings (${blockers} blocker${blockers === 1 ? "" : "s"}), ` +
+    `Wrote ${outPath}: ${count(review.tasks.length, "task")}, ${count(review.findings.length, "finding")} (${count(blockers, "blocker")}), ` +
       `deadline ${review.deadline_day === null ? "not clear" : `day ${review.deadline_day}`}, ` +
       `${review.meta.attempts} model call${review.meta.attempts === 1 ? "" : "s"}${cost}.`,
   );
