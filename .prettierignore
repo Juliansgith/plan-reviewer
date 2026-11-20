@@ -13,4 +13,4 @@ docs/contracts.md
 docs/client-email.md
 BRAND.md
 check_contract.py
-src/core/review/fixtures
+src/core/review/__fixtures__
