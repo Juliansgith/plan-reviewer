@@ -33,12 +33,13 @@ export OPENROUTER_API_KEY=sk-or-...      # or put it in .env (see .env.example) 
 
 `./review` exits 0 when it wrote a verified review, 1 when the model gave no usable answer after three attempts, 2 for a usage or setup problem (arguments, plan file, API key), and 3 when OpenRouter is unavailable or out of credit. It writes nothing unless it exits 0. Run `./review --help` for details. On Windows without a POSIX shell, `npm run review -- <plan.md> <out.json>` does the same.
 
-| Variable                 | Needed | Default                             | Purpose                                               |
-| ------------------------ | ------ | ----------------------------------- | ----------------------------------------------------- |
-| `OPENROUTER_API_KEY`     | yes    |                                     | OpenRouter key                                        |
-| `REVIEW_MODEL`           | no     | `deepseek/deepseek-v4.1-flash-1017` | Any OpenRouter model that supports structured outputs |
-| `REVIEW_TIMEOUT_SECONDS` | no     | `270`                               | Total time budget, including repair rounds            |
-| `OPENROUTER_BASE_URL`    | no     | `https://openrouter.ai/api/v1`      | For tests and proxies                                 |
+| Variable                 | Needed | Default                             | Purpose                                                                                                    |
+| ------------------------ | ------ | ----------------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| `OPENROUTER_API_KEY`     | yes    |                                     | OpenRouter key                                                                                             |
+| `REVIEW_MODEL`           | no     | `deepseek/deepseek-v4.1-flash-1017` | Any OpenRouter model that supports structured outputs                                                      |
+| `REVIEW_TIMEOUT_SECONDS` | no     | `270`                               | Total time budget, including repair rounds                                                                 |
+| `REVIEW_REASONING`       | no     | `off`                               | `low`, `medium` or `high` turn on model reasoning; off is faster and more reliable (docs/DECISIONS.md, D5) |
+| `OPENROUTER_BASE_URL`    | no     | `https://openrouter.ai/api/v1`      | For tests and proxies                                                                                      |
 
 The stored reviews in `data/reviews/` are what `./review` wrote, unedited. The page re-checks each one when it loads it and refuses to show one whose quotes or deadline are not in the plan.
 
@@ -60,6 +61,10 @@ python3 check_contract.py review data/reviews/spring-market.json
 ```
 
 `npm run contract` starts the built app on a free port and runs both, plus refusal and timing checks. `CONTRACT_BASE_URL=<url> npm run contract` checks a server that is already running, such as the Docker container or the deployed app.
+
+## Deployed
+
+The app runs at [planreviewer.213-133-98-90.sslip.io](https://planreviewer.213-133-98-90.sslip.io). The page needs a password, shared outside the repository; the scheduling API is open so the contract checker can reach it. How it is deployed and how to redeploy: [docs/DEPLOY.md](docs/DEPLOY.md).
 
 ## Docker
 

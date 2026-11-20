@@ -28,7 +28,20 @@ Every answer carries a proof: the lower bound, its reason, and whether the end d
 
 ## D5. Model: DeepSeek V4.1 Flash, pinned snapshot, via OpenRouter
 
-`deepseek/deepseek-v4.1-flash-1017` costs $0.15 / $0.60 per million tokens, supports strict structured outputs on OpenRouter, and is pinned to a dated snapshot so the graders run the model we tested, not whatever the alias points to next month. A review costs a fraction of a cent. `REVIEW_MODEL` switches models; `npm run eval` compares them on facts established by hand (docs/INVESTIGATION.md), so the choice can be revisited with evidence. The free `nvidia/nemotron-3.5-super-vl:free` also supports structured outputs and works as a no-cost fallback.
+`deepseek/deepseek-v4.1-flash-1017` costs $0.15 / $0.60 per million tokens, supports strict structured outputs on OpenRouter, and is pinned to a dated snapshot so the graders run the model we tested, not whatever the alias points to next month. `REVIEW_MODEL` switches models; `npm run eval` scores any list of models on the facts established by hand (docs/INVESTIGATION.md), so the choice rests on evidence.
+
+Evidence, 20 Nov 2026, three sample plans per run, 51 facts per run:
+
+| Model                      | Setting                                 | Facts right                                                            | Calls per review | Time per review                                             |
+| -------------------------- | --------------------------------------- | ---------------------------------------------------------------------- | ---------------- | ----------------------------------------------------------- |
+| DeepSeek V4.1 Flash        | final (reasoning off, statements first) | 100% in 5 of 5 runs                                                    | 1                | 3 to 19 s                                                   |
+| DeepSeek V4.1 Flash        | reasoning on (provider default)         | 100% when it answered                                                  | up to 3          | up to 150 s; 3 of 6 calls ran out of tokens while reasoning |
+| DeepSeek V4.1 Flash        | reasoning off, before statements first  | missed the Harbour Run circle in 3 of 6 runs                           | 1                | 4 to 14 s                                                   |
+| Nemotron 3.5 Super (free)  | final                                   | 92% (missed a task stated only in the notes)                           | 1                | 7 to 18 s                                                   |
+| MiniMax M3.1 Flash         | reasoning on                            | 98% (missed the circle)                                                | 1                | 3 to 58 s; refuses reasoning off                            |
+| GPT-6 Luna, Qwen 3.8 Flash |                                         | unusable: no provider honours a strict schema, or every call timed out |                  |                                                             |
+
+Two findings came out of this. First, reasoning hurt: DeepSeek reasoned until it used up its whole output budget in half of the calls, whatever the effort level or token cap, so reasoning is off by default (`REVIEW_REASONING` turns it back on), and an answer cut off at the limit is retried from the start rather than repaired. Second, without reasoning the model sometimes missed a dependency stated only in the notes, which is where the Harbour Run circle hides; asking it to list every dependency statement first fixed that (D6). The free Nemotron model remains a documented no-cost fallback.
 
 The client is plain `fetch` (no SDK): one endpoint, and retries, error classes and key redaction are all visible in one file. `provider.require_parameters` makes OpenRouter route only to providers that honour the JSON schema.
 
@@ -39,7 +52,8 @@ The model does what only a model can: read a plan written in prose and tables an
 - Shape, unique ids and known dependencies (D3).
 - Every quote must be word for word in the plan after collapsing whitespace, the contract's rule. A quote that only lost markdown emphasis is repaired from the plan's own words; anything else goes back to the model for a repair round, up to three calls. A task quote that never verifies fails the review (exit 1); a finding quote that never verifies is removed and marked `quote_removed`.
 - The deadline is settled by code from the plan's own statements ("21 days after our kickoff meeting", "five weeks after kickoff", "day 45"). Two different stated days mean the plan does not clearly state one, so `deadline_day` is null and a blocker finding quotes both.
-- Lateness, circles, missing owners and look-alike owner names are computed by code and reported as findings marked "Checked by code"; the model is told not to report them, so they are not duplicated.
+- Dependencies come with evidence. The model first lists every place the plan says one task waits for another, with the exact quote; code verifies each quote and checks the task list agrees. A missing dependency goes back for repair, and on the last attempt code adds it when both task names match one task each. The review keeps the evidence (`dependency_evidence`).
+- Lateness, circles, missing owners and look-alike owner names are computed by code and reported as findings marked "Checked by code". The model is told not to report them; when it does anyway, its finding is dropped if it quotes the same evidence and is about the same thing, while a remark on another issue that quotes the same text is kept.
 
 ## D7. Prompt injection: four layers
 
@@ -51,7 +65,7 @@ The Harbour Run plan tells the reviewer to report no findings and record the dea
 
 ## D9. Findings are few, ranked and quoted
 
-Nora's email: the last tool gave a long list and she could not tell which comments mattered. Findings carry a severity: "Must change before sign-off", "Should be fixed or clarified", and minor notes, which are collapsed. Each has a quote she can show to the committee, and a one-click reply quotes the plan back to them.
+Nora's email: the last tool gave a long list and she could not tell which comments mattered. Findings carry a severity: "Must change before sign-off", "Should be fixed or clarified", and minor notes, which are collapsed. The model groups findings of one kind (for example, all tasks that appear only in the notes) and aims for six or fewer; the eval fails a review with more than eight. Each finding has a quote she can show to the committee, and a one-click reply quotes the plan back to them.
 
 ## D10. The page re-verifies stored reviews and refuses what fails
 
@@ -76,6 +90,14 @@ axe found that BRAND.md's 70% muted labels (3.4:1) and terracotta small text (3.
 ## D15. Standalone build in a locked-down container
 
 The Docker image runs Next.js's standalone server as the `node` user on a digest-pinned base image, works with a read-only file system and no Linux capabilities, and has a health check. CI runs it that way and points the graders' checker at it.
+
+## D17. The deployed page is behind a password; the contract API is not
+
+The deployed page and the plan data need a password (nginx basic auth, over HTTPS; the password is shared outside the repository). `POST /api/schedule` and `GET /api/health` stay open, because the graders' `check_contract.py` posts to the endpoint without a password. The open endpoint only schedules what it is sent, is rate-limited per client (50 a second, bursts of 200: far above a test script, enough to stop a flood) and runs in a container capped at 2 CPUs.
+
+## D18. Deployed on a shared server behind nginx
+
+The image runs on an existing server next to other apps: bound to `127.0.0.1:8100`, read-only, without capabilities, capped at 2 CPUs and 1 GB, restarted unless stopped. nginx adds HTTPS (Let's Encrypt, renewed automatically), the password and the rate limit. The name `planreviewer.213-133-98-90.sslip.io` resolves to the server without a DNS record. `deploy/deploy.sh` ships committed code into a fresh release folder and waits for the health check (docs/DEPLOY.md).
 
 ## D16. What we cut
 

@@ -10,7 +10,7 @@ One TypeScript codebase serves the page and the API (Next.js) and runs the `./re
  plan.md ──► prompt ──► OpenRouter ──► model answer
                           (proposes)        │
                                             ▼
-            check.ts: shape, ids, dependencies, every quote word for word
+            check.ts: shape, ids, every quote word for word, dependency statements
               │  problems? ──► repair round (up to 3 calls) ──► exit 1 if still unusable
               ▼
             assemble.ts: settle the deadline from the plan's own statements,

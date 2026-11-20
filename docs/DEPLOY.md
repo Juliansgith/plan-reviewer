@@ -44,5 +44,6 @@ cd /opt/plan-reviewer/current && docker compose -f deploy/compose.yaml down
 ## Current deployment
 
 - Server: `portfolio-honey` (Ubuntu 22.04).
-- URL: `https://planreviewer.213-133-98-90.sslip.io` ([sslip.io](https://sslip.io) maps the name to the server's address, so no DNS record is needed).
-- The password is shared outside the repository.
+- URL: `https://planreviewer.213-133-98-90.sslip.io` (HTTPS from Let's Encrypt, renewed by certbot's timer) ([sslip.io](https://sslip.io) maps the name to the server's address, so no DNS record is needed).
+- Login: user `nora`; the password is shared outside the repository.
+- Rate limit on `/api/schedule`: 50 requests a second per client, bursts of 200.
