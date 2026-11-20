@@ -45,7 +45,9 @@ describe("reconcileDependencies", () => {
     const result = reconcileDependencies(plan, tasks, [insuranceWaits], { lastAttempt: false });
     expect(result.tasks).toEqual(tasks);
     expect(result.errors).toHaveLength(1);
-    expect(result.errors[0]).toContain('"take out the event insurance" waits for "get the course approved"');
+    expect(result.errors[0]).toContain(
+      '"take out the event insurance" waits for "get the course approved"',
+    );
     expect(result.errors[0]).toContain("T3");
     expect(result.errors[0]).toContain("T2");
   });
@@ -58,12 +60,16 @@ describe("reconcileDependencies", () => {
 
   it("records verified evidence for each dependency it could place", () => {
     const result = reconcileDependencies(plan, tasks, [insuranceWaits], { lastAttempt: true });
-    expect(result.evidence).toEqual([{ task_id: "T3", waits_for_id: "T2", quote: insuranceWaits.quote }]);
+    expect(result.evidence).toEqual([
+      { task_id: "T3", waits_for_id: "T2", quote: insuranceWaits.quote },
+    ]);
   });
 
   it("asks again for a statement whose quote is not in the plan, and drops it on the last attempt", () => {
     const invented = { ...insuranceWaits, quote: "Insurance comes after approval." };
-    expect(reconcileDependencies(plan, tasks, [invented], { lastAttempt: false }).errors[0]).toContain(
+    expect(
+      reconcileDependencies(plan, tasks, [invented], { lastAttempt: false }).errors[0],
+    ).toContain(
       'dependency_statements[0] quote is not in the plan: "Insurance comes after approval."',
     );
     const last = reconcileDependencies(plan, tasks, [invented], { lastAttempt: true });
@@ -74,7 +80,8 @@ describe("reconcileDependencies", () => {
   it("ignores statements it cannot place, and dependencies already present", () => {
     const unknown = { ...insuranceWaits, task: "something else entirely" };
     const present = {
-      quote: "They also need to see our insurance certificate before they will sign off the course.",
+      quote:
+        "They also need to see our insurance certificate before they will sign off the course.",
       task: "Get the course approved by the council",
       waits_for: "Take out the event insurance",
     };

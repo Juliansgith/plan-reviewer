@@ -233,6 +233,7 @@ export function assembleReview(
     findings,
     deadline_quote,
     deadline_statements: statements.map(({ day, quote }) => ({ day, quote })),
+    dependency_evidence: answer.dependency_evidence,
     meta,
   };
 

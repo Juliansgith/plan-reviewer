@@ -3,7 +3,8 @@
 
 import { z } from "zod";
 import { formatPath, parseReview, type ReviewTask } from "../contracts";
-import { collapseWhitespace, locateQuote, locateQuoteIgnoringEmphasis } from "../text";
+import { verifiedQuote } from "../text";
+import { reconcileDependencies, type DependencyEvidence } from "./dependencies";
 import type { Severity } from "./types";
 
 export type ModelFinding = {
@@ -19,9 +20,15 @@ export type CheckedAnswer = {
   deadline_quote: string | null;
   tasks: ReviewTask[];
   findings: ModelFinding[];
+  dependency_evidence: DependencyEvidence[];
 };
 
 const ModelAnswerSchema = z.looseObject({
+  // Required in the JSON schema the model gets; tolerated if a model drops it.
+  dependency_statements: z
+    .array(z.looseObject({ quote: z.string(), task: z.string(), waits_for: z.string() }))
+    .optional()
+    .default([]),
   deadline_day: z.int({ error: "must be a whole number or null" }).nullable(),
   deadline_quote: z.string().nullable(),
   tasks: z.array(
@@ -70,13 +77,6 @@ export function parseModelJson(
 
 const NO_OWNER = /^(?:tbc|tba|tbd|unknown|n\/?a|none|nobody|no one|-+|—|\?+)$/i;
 
-/** Returns the quote as it should be stored, or null if it is not in the plan. */
-function verifiedQuote(plan: string, quote: string): string | null {
-  const trimmed = collapseWhitespace(quote).trim();
-  if (locateQuote(plan, trimmed)) return trimmed;
-  return locateQuoteIgnoringEmphasis(plan, trimmed)?.quote ?? null;
-}
-
 export function checkAnswer(
   plan: string,
   value: unknown,
@@ -94,7 +94,7 @@ export function checkAnswer(
   const errors: string[] = [];
   const raw = shape.data;
 
-  const tasks: ReviewTask[] = raw.tasks.map((task, index) => {
+  const listed: ReviewTask[] = raw.tasks.map((task, index) => {
     const owner =
       task.owner === null || NO_OWNER.test(task.owner.trim()) || !task.owner.trim()
         ? null
@@ -141,9 +141,24 @@ export function checkAnswer(
     }
   }
 
+  const dependencies = reconcileDependencies(plan, listed, raw.dependency_statements, {
+    lastAttempt,
+  });
+  errors.push(...dependencies.errors);
+  const tasks = dependencies.tasks;
+
   const graph = parseReview({ deadline_day: raw.deadline_day, tasks, findings: [] });
   if (!graph.ok) errors.push(...graph.errors);
 
   if (errors.length) return { ok: false, errors };
-  return { ok: true, answer: { deadline_day: raw.deadline_day, deadline_quote, tasks, findings } };
+  return {
+    ok: true,
+    answer: {
+      deadline_day: raw.deadline_day,
+      deadline_quote,
+      tasks,
+      findings,
+      dependency_evidence: dependencies.evidence,
+    },
+  };
 }

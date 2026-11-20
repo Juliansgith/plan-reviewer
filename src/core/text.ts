@@ -109,3 +109,14 @@ export function splitSentences(text: string): Sentence[] {
   }
   return sentences;
 }
+
+/**
+ * The quote as it should be stored (whitespace collapsed, trimmed), repaired
+ * from the plan's own words if it only dropped markdown emphasis; null if it
+ * is not in the plan.
+ */
+export function verifiedQuote(plan: string, quote: string): string | null {
+  const trimmed = collapseWhitespace(quote).trim();
+  if (locateQuote(plan, trimmed)) return trimmed;
+  return locateQuoteIgnoringEmphasis(plan, trimmed)?.quote ?? null;
+}

@@ -40,6 +40,8 @@ export type StoredReview = {
   findings: ReviewFinding[];
   deadline_quote: string | null;
   deadline_statements: DeadlineStatement[];
+  /** For each dependency the model gave evidence for: which task waits, for which, and the plan's words. */
+  dependency_evidence: { task_id: string; waits_for_id: string; quote: string }[];
   meta: {
     model: string;
     attempts: number;
