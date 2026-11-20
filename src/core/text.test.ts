@@ -1,6 +1,11 @@
 import fc from "fast-check";
 import { describe, expect, it } from "vitest";
-import { collapseWhitespace, locateQuote, locateQuoteIgnoringEmphasis, splitSentences } from "./text";
+import {
+  collapseWhitespace,
+  locateQuote,
+  locateQuoteIgnoringEmphasis,
+  splitSentences,
+} from "./text";
 
 describe("collapseWhitespace", () => {
   it("turns every run of whitespace into one space, as the contract says", () => {
@@ -14,7 +19,9 @@ describe("locateQuote", () => {
   it("finds a quote across line breaks and repeated spaces, and returns raw offsets", () => {
     const span = locateQuote(plan, "Ann books the hall, which takes three days.");
     expect(span).not.toBeNull();
-    expect(plan.slice(span!.start, span!.end)).toBe("Ann books the hall,\nwhich takes   three days.");
+    expect(plan.slice(span!.start, span!.end)).toBe(
+      "Ann books the hall,\nwhich takes   three days.",
+    );
   });
 
   it("is case-sensitive and exact", () => {
@@ -42,7 +49,9 @@ describe("locateQuote", () => {
         const respaced = quote.replace(/\s+/g, " ");
         const span = locateQuote(raw, respaced);
         expect(span).not.toBeNull();
-        expect(collapseWhitespace(raw.slice(span!.start, span!.end))).toBe(collapseWhitespace(respaced).trim());
+        expect(collapseWhitespace(raw.slice(span!.start, span!.end))).toBe(
+          collapseWhitespace(respaced).trim(),
+        );
       }),
       { numRuns: 500 },
     );
@@ -67,7 +76,13 @@ describe("splitSentences", () => {
   it("splits on sentence ends and line breaks and keeps raw offsets", () => {
     const text = "One thing. Two things!\n| a | b |\nThree?";
     const sentences = splitSentences(text);
-    expect(sentences.map((s) => s.text)).toEqual(["One thing.", "Two things!", "| a | b |", "Three?"]);
-    for (const sentence of sentences) expect(text.slice(sentence.start, sentence.end)).toBe(sentence.text);
+    expect(sentences.map((s) => s.text)).toEqual([
+      "One thing.",
+      "Two things!",
+      "| a | b |",
+      "Three?",
+    ]);
+    for (const sentence of sentences)
+      expect(text.slice(sentence.start, sentence.end)).toBe(sentence.text);
   });
 });

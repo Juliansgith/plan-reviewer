@@ -89,6 +89,8 @@ describe("findDeadlineStatements", () => {
   });
 
   it("ignores durations that are not deadlines", () => {
-    expect(findDeadlineStatements("Printing takes 5 days. The hall is booked for day 2 of setup.")).toEqual([]);
+    expect(
+      findDeadlineStatements("Printing takes 5 days. The hall is booked for day 2 of setup."),
+    ).toEqual([]);
   });
 });
