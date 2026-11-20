@@ -72,11 +72,7 @@ export function describeChange(change: Change): string {
 function standing(end: number, deadline: number, before: number | null): string {
   const late = end > deadline;
   const wasLate = before !== null && before > deadline;
-  if (late)
-    return `${before === null ? "" : wasLate ? "Still " : "Now "}${days(end - deadline)} late.`.replace(
-      /^(\d)/,
-      "$1",
-    );
+  if (late) return `${before === null ? "" : wasLate ? "Still " : "Now "}${days(end - deadline)} late.`;
   const prefix = before === null ? "On time" : wasLate ? "Now on time" : "Still on time";
   return `${prefix}, ${spareText(deadline - end)}.`;
 }

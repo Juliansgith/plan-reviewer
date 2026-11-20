@@ -47,7 +47,13 @@ export type PlanView = PlanSummary & {
   text: string;
   review: ViewReview | null;
   problems: string[];
-  quotes: { tasks: Record<string, Span | null>; findings: (Span | null)[] };
+  quotes: {
+    tasks: Record<string, Span | null>;
+    findings: (Span | null)[];
+    deadline: Span | null;
+  };
+  /** Every deadline day the plan's text states, for plans without one clear deadline. */
+  deadlineCandidates: number[];
   schedule: ScheduleResult | null;
 };
 
@@ -212,7 +218,11 @@ export function createPlanRepository(dataDir: string) {
         findings: (review?.findings ?? []).map((finding) =>
           finding.quote ? locateQuote(text, finding.quote) : null,
         ),
+        deadline: review?.deadline_quote ? locateQuote(text, review.deadline_quote) : null,
       },
+      deadlineCandidates: [...new Set(findDeadlineStatements(text).map((s) => s.day))].sort(
+        (a, b) => a - b,
+      ),
     };
   }
 
