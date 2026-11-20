@@ -1,0 +1,16 @@
+node_modules
+.next
+coverage
+playwright-report
+test-results
+package-lock.json
+next-env.d.ts
+# Inputs and outputs we must not reformat: sample plans, stored reviews,
+# the brief's own documents and examples, and model output.
+data
+examples
+docs/contracts.md
+docs/client-email.md
+BRAND.md
+check_contract.py
+src/core/review/fixtures

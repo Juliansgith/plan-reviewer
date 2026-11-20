@@ -1,0 +1,58 @@
+{
+  "name": "plan-reviewer",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Reviews volunteer event plans: a model extracts tasks and findings, code checks them and schedules the work, and a page shows whether the plan can make its date.",
+  "type": "module",
+  "engines": {
+    "node": ">=20.9.0"
+  },
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint . --max-warnings 0",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "test:e2e": "playwright test",
+    "contract": "node scripts/contract-check.mjs",
+    "review": "tsx src/cli/review.ts",
+    "eval": "tsx src/cli/eval.ts",
+    "check": "npm run format:check && npm run lint && npm run typecheck && npm run test && npm run build && npm run contract"
+  },
+  "dependencies": {
+    "@fontsource-variable/inter": "5.3.0",
+    "@fontsource-variable/source-serif-4": "5.3.1",
+    "mdast-util-from-markdown": "2.1.0",
+    "mdast-util-gfm-table": "2.0.1",
+    "micromark-extension-gfm-table": "2.1.2",
+    "next": "16.4.6",
+    "react": "19.3.1",
+    "react-dom": "19.3.1",
+    "tsx": "4.23.15",
+    "zod": "4.6.7"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.65.1",
+    "@testing-library/jest-dom": "8.0.0",
+    "@testing-library/react": "16.3.3",
+    "@testing-library/user-event": "14.6.13",
+    "@types/mdast": "4.0.4",
+    "@types/node": "22.20.5",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "@vitejs/plugin-react": "6.3.0",
+    "@vitest/coverage-v8": "5.1.1",
+    "eslint": "9.39.5",
+    "eslint-config-next": "16.4.6",
+    "fast-check": "4.10.3",
+    "jsdom": "31.0.1",
+    "prettier": "3.10.1",
+    "typescript": "6.0.3",
+    "vitest": "5.1.1"
+  }
+}

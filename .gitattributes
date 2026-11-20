@@ -1,0 +1,4 @@
+# Store and check out text files with LF everywhere, including Windows,
+# so ./review and the shell scripts keep working under WSL and in Docker.
+* text=auto eol=lf
+*.png binary

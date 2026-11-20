@@ -1,13 +1,23 @@
-.PHONY: setup run test
+.PHONY: setup run test check e2e
 
+# Install exact dependency versions from the lockfile.
 setup:
-	python3 -m venv .venv
-	.venv/bin/pip install -r backend/requirements.txt
-	cd frontend && npm install
+	npm ci
 
+# Build and serve the page and API at http://localhost:8000.
 run:
-	cd frontend && npm run build
-	cd backend && ../.venv/bin/uvicorn app.main:app --port 8000
+	npm run build
+	PORT=$${PORT:-8000} npm start
 
+# Unit, property, component and API tests.
 test:
-	.venv/bin/pytest backend/tests
+	npm test
+
+# Everything CI runs: format, lint, types, tests, build, contract checks.
+check:
+	npm run check
+
+# Browser tests (installs Chromium on first run).
+e2e:
+	npx playwright install chromium
+	npm run test:e2e

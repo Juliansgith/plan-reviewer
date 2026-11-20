@@ -1,2 +1,12 @@
 #!/bin/sh
-PYTHONPATH=backend exec .venv/bin/python -m app.review "$@"
+# Review an event plan with a model and write the review as JSON.
+#
+#   ./review <plan.md> <out.json>
+#
+# Needs OPENROUTER_API_KEY. Optional: REVIEW_MODEL, REVIEW_TIMEOUT_SECONDS.
+# Exit codes: 0 review written, 1 no usable review, 2 usage or setup error,
+# 3 model service error. On any non-zero exit, no output file is written.
+set -eu
+here=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+export TSX_TSCONFIG_PATH="$here/tsconfig.json"
+exec "$here/node_modules/.bin/tsx" "$here/src/cli/review.ts" "$@"

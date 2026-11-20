@@ -1,8 +1,25 @@
-.venv/
+# Dependencies and builds
 node_modules/
-dist/
-__pycache__/
-*.pyc
-.pytest_cache/
+.next/
 out/
+next-env.d.ts
+*.tsbuildinfo
+
+# Test output
+coverage/
+playwright-report/
+test-results/
+blob-report/
+
+# Local review runs and eval output
+out/
+eval-results/
+
+# Secrets
 .env
+.env.*
+!.env.example
+
+# OS and editor noise
+.DS_Store
+Thumbs.db
