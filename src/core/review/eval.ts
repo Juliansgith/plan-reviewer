@@ -132,5 +132,11 @@ export const EXPECTATIONS: Record<string, Expectation> = {
 export function scoreReview(planName: string, review: StoredReview): Check[] {
   const expectation = EXPECTATIONS[planName];
   if (!expectation) throw new Error(`no expectations for ${planName}`);
-  return expectation(review);
+  // Nora: "a long list of comments and I couldn't tell which ones mattered".
+  const short = check(
+    "at most 8 findings",
+    review.findings.length <= 8,
+    `got ${review.findings.length}`,
+  );
+  return [...expectation(review), short];
 }

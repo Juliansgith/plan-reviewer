@@ -17,7 +17,15 @@ import type { CheckedAnswer } from "./check";
 import { findDeadlineStatements, findInstructionsToReviewer, quoteStatesDay } from "./signals";
 import type { ReviewFinding, StoredReview } from "./types";
 
-type CodeFinding = ReviewFinding & { covers: Span[] };
+/**
+ * A finding code establishes. A model finding is dropped as a duplicate when
+ * its quote overlaps one of `covers` and, if `absorbs` is set, its title or
+ * detail is about the same thing (so a remark on another issue survives).
+ */
+type CodeFinding = ReviewFinding & { covers: Span[]; absorbs?: RegExp };
+
+const ABOUT_A_CIRCLE = /circ|cycle|each other|one another|loop|deadlock|both ways/i;
+const ABOUT_AN_OWNER = /owner|nobody|no one|not named|unnamed|unassigned|\btbc\b|responsib/i;
 
 const SEVERITY_RANK = { blocker: 0, warning: 1, note: 2 } as const;
 const days = (n: number) => `${n} day${n === 1 ? "" : "s"}`;
@@ -124,9 +132,14 @@ export function assembleReview(
       severity: "blocker",
       source: "code",
       kind: "cycle",
-      // A circle is about the dependencies, not the task wording, so model
-      // findings that quote these tasks are about something else: keep them.
-      covers: [],
+      // The tasks in the circle and the statements that link them.
+      covers: [
+        ...cycle.map((id) => spanOf(quoteOf.get(id)!)),
+        ...answer.dependency_evidence
+          .filter((e) => cycle.includes(e.task_id) && cycle.includes(e.waits_for_id))
+          .map((e) => spanOf(e.quote)),
+      ].filter((s): s is Span => s !== null),
+      absorbs: ABOUT_A_CIRCLE,
     };
   });
   codeFindings.unshift(...cycleFindings);
@@ -184,8 +197,8 @@ export function assembleReview(
       severity: "warning",
       source: "code",
       kind: "no_owner",
-      // The model may quote the same task about another issue: keep that.
-      covers: [],
+      covers: [spanOf(task.quote)].filter((s): s is Span => s !== null),
+      absorbs: ABOUT_AN_OWNER,
     });
   }
   const owners = [
@@ -208,16 +221,21 @@ export function assembleReview(
   });
 
   // --- Merge ------------------------------------------------------------------
-  const covered = codeFindings.flatMap((finding) => finding.covers);
+  const isDuplicate = (finding: (typeof answer.findings)[number]) => {
+    const span = spanOf(finding.quote);
+    if (!span) return false;
+    const text = `${finding.title} ${finding.detail}`;
+    return codeFindings.some(
+      (code) =>
+        code.covers.some((c) => overlaps(c, span)) && (!code.absorbs || code.absorbs.test(text)),
+    );
+  };
   const modelFindings: ReviewFinding[] = answer.findings
-    .filter((finding) => {
-      const span = spanOf(finding.quote);
-      return !span || !covered.some((c) => overlaps(c, span));
-    })
+    .filter((finding) => !isDuplicate(finding))
     .map((finding) => ({ ...finding, source: "model" as const, kind: "model" as const }));
 
   const findings: ReviewFinding[] = [
-    ...codeFindings.map(({ covers: _covers, ...finding }) => finding),
+    ...codeFindings.map(({ covers: _covers, absorbs: _absorbs, ...finding }) => finding),
     ...modelFindings,
   ]
     .map((finding, order) => ({ finding, order }))
