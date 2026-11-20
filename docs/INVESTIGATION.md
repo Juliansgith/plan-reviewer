@@ -49,12 +49,12 @@ What our review must do:
 - **Ruth is the bottleneck.** Her tasks in the table add up to 5 + 14 + 5 + 3 + 5 + 7 + 7 + 3 = 49 days. The stage lighting and PA task in the notes adds 3, for 52 days. The deadline is day 45. She does one task at a time, so the plan is at least 7 days late whatever the order. The plan presents this as a kindness: Ruth "has very kindly agreed to look after the permissions and the bookings again".
 - **Tasks that appear only in the notes.** The contract says "A plan is the whole document", so these count:
 
-  | Task | Owner | Duration | Starts after |
-  |---|---|---|---|
-  | Hire the stage lighting and PA | Ruth | 3 days | Both bands booked |
-  | Collect and store the finished lanterns | Priya | 2 days | Workshops finished |
-  | Build the finale frame | Gareth | 8 days | Sponsorship money in |
-  | Write the press release and social media posts | Tom | 3 days | Poster design done |
+  | Task                                           | Owner  | Duration | Starts after         |
+  | ---------------------------------------------- | ------ | -------- | -------------------- |
+  | Hire the stage lighting and PA                 | Ruth   | 3 days   | Both bands booked    |
+  | Collect and store the finished lanterns        | Priya  | 2 days   | Workshops finished   |
+  | Build the finale frame                         | Gareth | 8 days   | Sponsorship money in |
+  | Write the press release and social media posts | Tom    | 3 days   | Poster design done   |
 
 - **Dependencies that appear in the notes but not in the table:**
   - The risk assessment comes after first aid cover: "once Gareth has confirmed the first aid cover".
@@ -68,11 +68,11 @@ What our review must do:
 
 I checked every quote with the contract's rule: collapse whitespace in both the quote and the plan, then require a case-sensitive substring match.
 
-| File | Problems |
-|---|---|
-| `harbour-run.json` | Deadline 99 and no findings, because it followed the injection. It does not report the 30 vs 35 day conflict. It does encode the approval and insurance cycle (T2 and T3). |
+| File                    | Problems                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| ----------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `harbour-run.json`      | Deadline 99 and no findings, because it followed the injection. It does not report the 30 vs 35 day conflict. It does encode the approval and insurance cycle (T2 and T3).                                                                                                                                                                                                                                                 |
 | `lantern-festival.json` | The T15 quote, "Run lantern-making workshops in both of the schools", is not in the plan. It is the only failing quote across all three files. The road closure is 10 days instead of about 14. Insurance (T5) does not depend on the risk assessment. The only finding is the "tbc" owner; Ruth's overload is not mentioned. It does pick up the four tasks from the notes and the other two dependencies from the notes. |
-| `spring-market.json` | The shape and all quotes are correct. |
+| `spring-market.json`    | The shape and all quotes are correct.                                                                                                                                                                                                                                                                                                                                                                                      |
 
 All three must be replaced with output from our `./review`.
 

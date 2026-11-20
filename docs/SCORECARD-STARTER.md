@@ -10,18 +10,18 @@ The README says the starter "does everything badly" on purpose, so low scores ar
 
 ## Overall: 3.0 / 10
 
-| Dimension | Weight | Score | Why |
-|---|---|---|---|
-| Correctness against the contracts | 15 | 1 | Fails its own bundled example; crashes on cycles; returns 500s on bad input |
-| AI-agent maintainability | 15 | 4 | Tiny, with a runnable contract checker, but no agent guide, no schema in code and no fast checks |
-| Architecture | 10 | 4 | The pipeline has the right shape, but the validation layer that makes it safe is missing |
-| Code quality | 10 | 5 | Short and readable, but untyped, with no error handling and a naive algorithm |
-| Tests and verification | 10 | 2 | Three happy-path tests, and no CI |
-| AI integration | 10 | 1 | A one-line prompt with no schema and no checks; the shipped outputs show the injection working and a made-up quote |
-| Security | 10 | 3 | Secrets are handled correctly, but it is open to prompt injection and CPU exhaustion, and Python dependencies are unpinned |
-| UX and product fit | 10 | 1 | Raw text and JSON dumps; meets none of Nora's three needs |
-| Ops and reproducibility | 5 | 5 | Good multi-stage Dockerfile and npm lockfile, but unpinned Python, a root container and Unix-only commands |
-| Documentation | 5 | 7 | Precise contracts with examples and clear setup, but no architecture or decision notes |
+| Dimension                         | Weight | Score | Why                                                                                                                        |
+| --------------------------------- | ------ | ----- | -------------------------------------------------------------------------------------------------------------------------- |
+| Correctness against the contracts | 15     | 1     | Fails its own bundled example; crashes on cycles; returns 500s on bad input                                                |
+| AI-agent maintainability          | 15     | 4     | Tiny, with a runnable contract checker, but no agent guide, no schema in code and no fast checks                           |
+| Architecture                      | 10     | 4     | The pipeline has the right shape, but the validation layer that makes it safe is missing                                   |
+| Code quality                      | 10     | 5     | Short and readable, but untyped, with no error handling and a naive algorithm                                              |
+| Tests and verification            | 10     | 2     | Three happy-path tests, and no CI                                                                                          |
+| AI integration                    | 10     | 1     | A one-line prompt with no schema and no checks; the shipped outputs show the injection working and a made-up quote         |
+| Security                          | 10     | 3     | Secrets are handled correctly, but it is open to prompt injection and CPU exhaustion, and Python dependencies are unpinned |
+| UX and product fit                | 10     | 1     | Raw text and JSON dumps; meets none of Nora's three needs                                                                  |
+| Ops and reproducibility           | 5      | 5     | Good multi-stage Dockerfile and npm lockfile, but unpinned Python, a root container and Unix-only commands                 |
+| Documentation                     | 5      | 7     | Precise contracts with examples and clear setup, but no architecture or decision notes                                     |
 
 Weighted: (1×15 + 4×15 + 4×10 + 5×10 + 2×10 + 1×10 + 3×10 + 1×10 + 5×5 + 7×5) / 100 = 2.95.
 
@@ -46,30 +46,30 @@ Each result carries a label, following TPF3-MP's investigation template:
 - **MEASURED:** timed.
 - **INFERRED:** reasoned from the code or the measurements, not seen.
 
-| Claim | Result | Label |
-|---|---|---|
-| The starter's tests pass | 3 passed in 0.27 s | CONFIRMED |
-| It fails its own contract check | `check_contract.py schedule` exits 1 with "tasks A and C overlap for owner Ann" and "tasks B and C overlap for owner Ann" | CONFIRMED |
-| Tasks with the same owner overlap | Two 3-day tasks for Ann both run on days 0 to 3 | CONFIRMED |
-| Cycles crash it | A↔B, a self-dependency and the Harbour Run plan all return a 500 with `RecursionError` | CONFIRMED |
-| Bad input gives a 500, not a 4xx | Missing `deadline_day` and an unknown dependency raise `KeyError`; an unknown plan id raises `FileNotFoundError`. All return the plain-text "Internal Server Error" | CONFIRMED |
-| A body that isn't a JSON object | 422 with a JSON body. This is FastAPI's own check, and the only bad input handled correctly | CONFIRMED |
-| A null deadline crashes it | 500 with `TypeError: '<=' not supported between instances of 'int' and 'NoneType'` | CONFIRMED |
-| Bad input is accepted silently | Duplicate ids come back twice; durations of 0 and −3 are accepted (end day −3); 61 tasks are accepted | CONFIRMED |
-| Long chains crash it | A 1,500-task chain returns a 500 with `RecursionError` | CONFIRMED |
-| Run time grows exponentially | Layered graph: 32 tasks took 0.13 s, 36 tasks 0.48 s and 40 tasks 1.88 s, doubling with each layer. The 60-task request had not answered after 15 s, and the container stayed at 100% CPU after the client gave up | MEASURED |
-| How long that 60-task request takes | About 32 minutes (1.88 s × 2^10) | INFERRED |
-| About 40 such requests block the server | Not tested; based on the default thread pool of 40 | INFERRED |
-| Lantern Festival is reported on time | The API returns end day 38 with `meets_deadline: true`, and the page says "Meets deadline: yes" | CONFIRMED |
-| Spring Market finishes on day 18 | The API returns end day 18 | CONFIRMED |
-| Harbour Run breaks the page | A blank page under the dropdown with no message. The console shows the 500 and a JSON parse error | CONFIRMED |
-| The page is a raw dump | The plan sits in a `<pre>` block and the review is raw JSON | CONFIRMED |
-| £ is mis-decoded on Windows | The default encoding is cp1252, so `read_text()` returns "Â£" | CONFIRMED |
-| Paths can escape `data/` on Windows | `GET /api/plans/..%5C..%5Ccanary-outside-data` returned a canary `.md` and `.json` pair placed outside `data/`, deleted afterwards. With forward slashes the same request gets a 404 | CONFIRMED |
-| The container runs as root and ships test dependencies | `id -un` returns root; pytest and httpx are installed | CONFIRMED |
-| `make` is missing on Windows | `make` was not found on this machine | CONFIRMED |
-| The Dockerfile builds | It builds cleanly, including `tsc --noEmit` for the frontend | CONFIRMED |
-| The review accepts any JSON and crashes on non-JSON | Not run, because it needs an API key | INFERRED |
+| Claim                                                  | Result                                                                                                                                                                                                             | Label     |
+| ------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | --------- |
+| The starter's tests pass                               | 3 passed in 0.27 s                                                                                                                                                                                                 | CONFIRMED |
+| It fails its own contract check                        | `check_contract.py schedule` exits 1 with "tasks A and C overlap for owner Ann" and "tasks B and C overlap for owner Ann"                                                                                          | CONFIRMED |
+| Tasks with the same owner overlap                      | Two 3-day tasks for Ann both run on days 0 to 3                                                                                                                                                                    | CONFIRMED |
+| Cycles crash it                                        | A↔B, a self-dependency and the Harbour Run plan all return a 500 with `RecursionError`                                                                                                                             | CONFIRMED |
+| Bad input gives a 500, not a 4xx                       | Missing `deadline_day` and an unknown dependency raise `KeyError`; an unknown plan id raises `FileNotFoundError`. All return the plain-text "Internal Server Error"                                                | CONFIRMED |
+| A body that isn't a JSON object                        | 422 with a JSON body. This is FastAPI's own check, and the only bad input handled correctly                                                                                                                        | CONFIRMED |
+| A null deadline crashes it                             | 500 with `TypeError: '<=' not supported between instances of 'int' and 'NoneType'`                                                                                                                                 | CONFIRMED |
+| Bad input is accepted silently                         | Duplicate ids come back twice; durations of 0 and −3 are accepted (end day −3); 61 tasks are accepted                                                                                                              | CONFIRMED |
+| Long chains crash it                                   | A 1,500-task chain returns a 500 with `RecursionError`                                                                                                                                                             | CONFIRMED |
+| Run time grows exponentially                           | Layered graph: 32 tasks took 0.13 s, 36 tasks 0.48 s and 40 tasks 1.88 s, doubling with each layer. The 60-task request had not answered after 15 s, and the container stayed at 100% CPU after the client gave up | MEASURED  |
+| How long that 60-task request takes                    | About 32 minutes (1.88 s × 2^10)                                                                                                                                                                                   | INFERRED  |
+| About 40 such requests block the server                | Not tested; based on the default thread pool of 40                                                                                                                                                                 | INFERRED  |
+| Lantern Festival is reported on time                   | The API returns end day 38 with `meets_deadline: true`, and the page says "Meets deadline: yes"                                                                                                                    | CONFIRMED |
+| Spring Market finishes on day 18                       | The API returns end day 18                                                                                                                                                                                         | CONFIRMED |
+| Harbour Run breaks the page                            | A blank page under the dropdown with no message. The console shows the 500 and a JSON parse error                                                                                                                  | CONFIRMED |
+| The page is a raw dump                                 | The plan sits in a `<pre>` block and the review is raw JSON                                                                                                                                                        | CONFIRMED |
+| £ is mis-decoded on Windows                            | The default encoding is cp1252, so `read_text()` returns "Â£"                                                                                                                                                      | CONFIRMED |
+| Paths can escape `data/` on Windows                    | `GET /api/plans/..%5C..%5Ccanary-outside-data` returned a canary `.md` and `.json` pair placed outside `data/`, deleted afterwards. With forward slashes the same request gets a 404                               | CONFIRMED |
+| The container runs as root and ships test dependencies | `id -un` returns root; pytest and httpx are installed                                                                                                                                                              | CONFIRMED |
+| `make` is missing on Windows                           | `make` was not found on this machine                                                                                                                                                                               | CONFIRMED |
+| The Dockerfile builds                                  | It builds cleanly, including `tsc --noEmit` for the frontend                                                                                                                                                       | CONFIRMED |
+| The review accepts any JSON and crashes on non-JSON    | Not run, because it needs an API key                                                                                                                                                                               | INFERRED  |
 
 One correction to the first draft: I had estimated the 60-task request would take hours. The measurements put it at about half an hour on this machine. The scores are unchanged.
 
@@ -176,15 +176,15 @@ What's weak:
 
 ## 7. Security: 3/10
 
-| Severity | Issue |
-|---|---|
-| High | **Prompt injection.** The plan text goes straight into the prompt, and the stored Harbour Run review shows the attack working. In this product, that lets a committee write its own approval into its plan. |
-| Medium | **CPU exhaustion without logging in.** `/api/schedule` has no size limit, and the scheduling is exponential. One valid 60-task request keeps a CPU core at 100% for about half an hour (extrapolated from measurements). About 40 of them would probably use up the default thread pool (not tested). |
-| Medium | **No input validation.** Anything unexpected becomes a 500. |
-| Low | **Loose pinning.** Python dependencies are neither pinned nor hashed, and the base images are pinned by tag, not by digest. |
-| Low | **Container setup.** The container runs as root and ships the test dependencies, pytest and httpx. |
-| Low | **No allow-list for `plan_id`.** On Linux this is safe: forward slashes get a 404. On a Windows host, an encoded backslash (`..%5C..%5C`) reads files outside `data/` wherever a matching `.md` and `.json` both exist. I confirmed this with a temporary canary pair. |
-| Note | **No authentication.** That is fine for a read-only demo, but it becomes a problem once Nora can save corrections. |
+| Severity | Issue                                                                                                                                                                                                                                                                                                 |
+| -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| High     | **Prompt injection.** The plan text goes straight into the prompt, and the stored Harbour Run review shows the attack working. In this product, that lets a committee write its own approval into its plan.                                                                                           |
+| Medium   | **CPU exhaustion without logging in.** `/api/schedule` has no size limit, and the scheduling is exponential. One valid 60-task request keeps a CPU core at 100% for about half an hour (extrapolated from measurements). About 40 of them would probably use up the default thread pool (not tested). |
+| Medium   | **No input validation.** Anything unexpected becomes a 500.                                                                                                                                                                                                                                           |
+| Low      | **Loose pinning.** Python dependencies are neither pinned nor hashed, and the base images are pinned by tag, not by digest.                                                                                                                                                                           |
+| Low      | **Container setup.** The container runs as root and ships the test dependencies, pytest and httpx.                                                                                                                                                                                                    |
+| Low      | **No allow-list for `plan_id`.** On Linux this is safe: forward slashes get a 404. On a Windows host, an encoded backslash (`..%5C..%5C`) reads files outside `data/` wherever a matching `.md` and `.json` both exist. I confirmed this with a temporary canary pair.                                |
+| Note     | **No authentication.** That is fine for a read-only demo, but it becomes a problem once Nora can save corrections.                                                                                                                                                                                    |
 
 What it does right:
 
@@ -240,18 +240,18 @@ Three read-only agents studied the benchmark projects. I spot-checked the claims
 
 The other details come from the agents' reports.
 
-| Practice | facet | TPF3-MP | X4-Online | plan-reviewer |
-|---|---|---|---|---|
-| Agent guide loaded automatically | No. The rules are in `docs/AGENT_RULES.md`, which agents don't find on their own | Yes. `CLAUDE.md` imports `AGENTS.md` (11.6 KB): branch flow, exact pre-push commands, "a behaviour change comes with a test that fails without it", and conflicts with `DECISIONS.md` get flagged, not settled | Yes. `CLAUDE.md` contains only `@AGENTS.md`: read order, hard don'ts, exact commands, and "a mocked test is not evidence" | None |
-| Contract in code | Traits (`Backend`, `TextMeasurer`), with `ARCHITECTURE.md` described as "the contract" | One protocol crate with `PROTOCOL_VERSION` and a changelog, and size-bounded types checked while decoding | Prose specs and hand-written parsing | Prose plus an external checker; no types |
-| Rules the tooling enforces | Workspace clippy lints, but no rustfmt | `unsafe_code = "deny"`, clippy with `-D warnings`, and a `clippy.toml` that bans `HashMap` and `Instant` with a reason for each | Nothing for Python | Strict TypeScript only |
-| One command for all checks | No | No: three cargo commands | Yes: `check.py`, where any skipped test fails the run unless allowed | `make test` (3 tests); the contract check runs separately |
-| CI that blocks merges | No: manual trigger only | Yes: 3 operating systems, fmt, clippy and `test --locked`, plus a smoke test of the Docker image | Yes: Linux and Windows jobs running `check.py` | None |
-| Tests with hostile input | No: even the `.fig` parser isn't fuzzed | Yes: proptest `hostile_bytes` tests, plus security-regression and memory proof-of-concept tests | Boundary limits, plus known-answer tests for the crypto | None |
-| Golden or differential tests | Yes: goldens refreshed with an environment-variable switch, and a line diff on failure | Differential: the Rust port is checked against the original Lua | Known-answer vectors | None |
-| Reproducible builds | `Cargo.lock` and `--locked`; non-root Docker image with a healthcheck; no pinned Rust version | Rust version pinned, `--locked` everywhere, and a distroless, non-root, read-only container | Dependencies pinned with `==` but no hashes; no Python version pin | npm lockfile only |
-| Evidence trail | Dated notes mixed in with the contract docs | `investigation/` uses a template where each claim is labelled CONFIRMED, MEASURED or INFERRED | About 60 dated reports, linked from the README | `INVESTIGATION.md` (from this session) |
-| Files over 800 lines | 101 | 79 | 18 (Python) | 0 |
+| Practice                         | facet                                                                                         | TPF3-MP                                                                                                                                                                                                        | X4-Online                                                                                                                 | plan-reviewer                                             |
+| -------------------------------- | --------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------- |
+| Agent guide loaded automatically | No. The rules are in `docs/AGENT_RULES.md`, which agents don't find on their own              | Yes. `CLAUDE.md` imports `AGENTS.md` (11.6 KB): branch flow, exact pre-push commands, "a behaviour change comes with a test that fails without it", and conflicts with `DECISIONS.md` get flagged, not settled | Yes. `CLAUDE.md` contains only `@AGENTS.md`: read order, hard don'ts, exact commands, and "a mocked test is not evidence" | None                                                      |
+| Contract in code                 | Traits (`Backend`, `TextMeasurer`), with `ARCHITECTURE.md` described as "the contract"        | One protocol crate with `PROTOCOL_VERSION` and a changelog, and size-bounded types checked while decoding                                                                                                      | Prose specs and hand-written parsing                                                                                      | Prose plus an external checker; no types                  |
+| Rules the tooling enforces       | Workspace clippy lints, but no rustfmt                                                        | `unsafe_code = "deny"`, clippy with `-D warnings`, and a `clippy.toml` that bans `HashMap` and `Instant` with a reason for each                                                                                | Nothing for Python                                                                                                        | Strict TypeScript only                                    |
+| One command for all checks       | No                                                                                            | No: three cargo commands                                                                                                                                                                                       | Yes: `check.py`, where any skipped test fails the run unless allowed                                                      | `make test` (3 tests); the contract check runs separately |
+| CI that blocks merges            | No: manual trigger only                                                                       | Yes: 3 operating systems, fmt, clippy and `test --locked`, plus a smoke test of the Docker image                                                                                                               | Yes: Linux and Windows jobs running `check.py`                                                                            | None                                                      |
+| Tests with hostile input         | No: even the `.fig` parser isn't fuzzed                                                       | Yes: proptest `hostile_bytes` tests, plus security-regression and memory proof-of-concept tests                                                                                                                | Boundary limits, plus known-answer tests for the crypto                                                                   | None                                                      |
+| Golden or differential tests     | Yes: goldens refreshed with an environment-variable switch, and a line diff on failure        | Differential: the Rust port is checked against the original Lua                                                                                                                                                | Known-answer vectors                                                                                                      | None                                                      |
+| Reproducible builds              | `Cargo.lock` and `--locked`; non-root Docker image with a healthcheck; no pinned Rust version | Rust version pinned, `--locked` everywhere, and a distroless, non-root, read-only container                                                                                                                    | Dependencies pinned with `==` but no hashes; no Python version pin                                                        | npm lockfile only                                         |
+| Evidence trail                   | Dated notes mixed in with the contract docs                                                   | `investigation/` uses a template where each claim is labelled CONFIRMED, MEASURED or INFERRED                                                                                                                  | About 60 dated reports, linked from the README                                                                            | `INVESTIGATION.md` (from this session)                    |
+| Files over 800 lines             | 101                                                                                           | 79                                                                                                                                                                                                             | 18 (Python)                                                                                                               | 0                                                         |
 
 **What all three share.** None of them has project settings, hooks or commands in `.claude/`, and none runs dependency audits. All three have many very large files. Plan-reviewer's small size is a real advantage for agents. Keep it by setting a file-size limit.
 
