@@ -27,7 +27,7 @@ PORT=8000 npm start           # make run; open http://localhost:8000
 ## Review a plan
 
 ```sh
-export OPENROUTER_API_KEY=sk-or-...
+export OPENROUTER_API_KEY=sk-or-...      # or put it in .env (see .env.example) and: set -a; . ./.env; set +a
 ./review data/plans/spring-market.md out/spring-market.json
 ```
 
