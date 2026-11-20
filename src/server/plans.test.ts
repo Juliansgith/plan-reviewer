@@ -17,7 +17,13 @@ Everything must be done by day 10.
 | Find stewards | Bob | 2 days | - |
 `;
 
-const task = (id: string, name: string, owner: string, duration_days: number, depends_on: string[] = []) => ({
+const task = (
+  id: string,
+  name: string,
+  owner: string,
+  duration_days: number,
+  depends_on: string[] = [],
+) => ({
   id,
   name,
   owner,
@@ -28,9 +34,20 @@ const task = (id: string, name: string, owner: string, duration_days: number, de
 
 const goodReview = {
   deadline_day: 10,
-  tasks: [task("T1", "Book the hall", "Ann", 3), task("T2", "Print posters", "Ann", 4, ["T1"]), task("T3", "Find stewards", "Bob", 2)],
+  tasks: [
+    task("T1", "Book the hall", "Ann", 3),
+    task("T2", "Print posters", "Ann", 4, ["T1"]),
+    task("T3", "Find stewards", "Bob", 2),
+  ],
   findings: [
-    { title: "Short on stewards", detail: "Two days may not be enough.", quote: "Find stewards", severity: "warning", source: "model", kind: "model" },
+    {
+      title: "Short on stewards",
+      detail: "Two days may not be enough.",
+      quote: "Find stewards",
+      severity: "warning",
+      source: "model",
+      kind: "model",
+    },
     { title: "No quote", detail: "General remark.", quote: null },
   ],
 };
@@ -45,7 +62,8 @@ afterEach(() => rmSync(dir, { recursive: true, force: true }));
 
 function write(id: string, plan: string, review?: unknown) {
   writeFileSync(join(dir, "plans", `${id}.md`), plan);
-  if (review !== undefined) writeFileSync(join(dir, "reviews", `${id}.json`), JSON.stringify(review));
+  if (review !== undefined)
+    writeFileSync(join(dir, "reviews", `${id}.json`), JSON.stringify(review));
 }
 
 describe("plan repository", () => {
@@ -57,7 +75,13 @@ describe("plan repository", () => {
       ["bare", "A Plan Without Review", "not_reviewed"],
       ["fair", "Pellerby Test Fair", "on_time"],
     ]);
-    expect(plans[1]!.verdict).toMatchObject({ end_day: 7, deadline_day: 10, days_late: 0, tasks: 3, blockers: 0 });
+    expect(plans[1]!.verdict).toMatchObject({
+      end_day: 7,
+      deadline_day: 10,
+      days_late: 0,
+      tasks: 3,
+      blockers: 0,
+    });
   });
 
   it("loads a plan with its review, quote positions and schedule", () => {
@@ -68,20 +92,30 @@ describe("plan repository", () => {
     expect(view.review?.tasks).toHaveLength(3);
     const span = view.quotes.tasks.T1!;
     expect(view.text.slice(span.start, span.end)).toBe("Book the hall");
-    expect(view.quotes.findings).toEqual([expect.objectContaining({ start: expect.any(Number) }), null]);
+    expect(view.quotes.findings).toEqual([
+      expect.objectContaining({ start: expect.any(Number) }),
+      null,
+    ]);
     expect(view.schedule).toMatchObject({ status: "scheduled", end_day: 7 });
   });
 
   it("fills in severity and source for findings from reviews written elsewhere", () => {
     write("fair", PLAN, goodReview);
     const view = createPlanRepository(dir).get("fair")!;
-    expect(view.review!.findings[1]).toMatchObject({ severity: "warning", source: "model", kind: "model" });
+    expect(view.review!.findings[1]).toMatchObject({
+      severity: "warning",
+      source: "model",
+      kind: "model",
+    });
   });
 
-  it.each(["../plans/fair", "..\\..\\README", "fair.md", "FAIR", "", "nope"])("returns nothing for id %j", (id) => {
-    write("fair", PLAN, goodReview);
-    expect(createPlanRepository(dir).get(id)).toBeNull();
-  });
+  it.each(["../plans/fair", "..\\..\\README", "fair.md", "FAIR", "", "nope"])(
+    "returns nothing for id %j",
+    (id) => {
+      write("fair", PLAN, goodReview);
+      expect(createPlanRepository(dir).get(id)).toBeNull();
+    },
+  );
 
   it("refuses to show a review whose quotes are not in the plan", () => {
     const review = structuredClone(goodReview);
@@ -114,19 +148,31 @@ describe("plan repository", () => {
     const cyclic = structuredClone(goodReview);
     cyclic.tasks[0]!.depends_on = ["T2"];
     write("cyclic", PLAN, cyclic);
-    const verdicts = Object.fromEntries(createPlanRepository(dir).list().map((p) => [p.id, p.verdict]));
+    const verdicts = Object.fromEntries(
+      createPlanRepository(dir)
+        .list()
+        .map((p) => [p.id, p.verdict]),
+    );
     expect(verdicts.late).toMatchObject({ status: "late", end_day: 12, days_late: 2 });
     expect(verdicts.cyclic).toMatchObject({ status: "cycle" });
   });
 
   it("reads the real sample data without crashing, and flags the starter's bait reviews", () => {
-    const repo = createPlanRepository(new URL("../../data", import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, "$1"));
+    const repo = createPlanRepository(
+      new URL("../../data", import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, "$1"),
+    );
     const plans = repo.list();
-    expect(plans.map((p) => p.id).sort()).toEqual(["harbour-run", "lantern-festival", "spring-market"]);
+    expect(plans.map((p) => p.id).sort()).toEqual([
+      "harbour-run",
+      "lantern-festival",
+      "spring-market",
+    ]);
     for (const plan of plans) expect(repo.get(plan.id)).not.toBeNull();
     // Until ./review regenerates them, the starter's stored reviews fail
     // verification (a made-up quote; a deadline taken from the injection).
-    const stored = JSON.parse(readFileSync(new URL("../../data/reviews/lantern-festival.json", import.meta.url), "utf8"));
+    const stored = JSON.parse(
+      readFileSync(new URL("../../data/reviews/lantern-festival.json", import.meta.url), "utf8"),
+    );
     if (stored.meta === undefined) {
       expect(repo.get("lantern-festival")!.review).toBeNull();
       expect(repo.get("harbour-run")!.review).toBeNull();

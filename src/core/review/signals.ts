@@ -127,3 +127,11 @@ export function findDeadlineStatements(plan: string): Statement[] {
   }
   return statements;
 }
+
+/** True when the quote states the day: it mentions n days, or n weeks for day 7n. */
+export function quoteStatesDay(quote: string, day: number): boolean {
+  const numbers = [...quote.matchAll(/\b(\d+|[a-z]+(?:-[a-z]+)?)\b/gi)]
+    .map((match) => parseNumberWord(match[1]!))
+    .filter((n): n is number => n !== null && n > 0);
+  return numbers.some((n) => n === day || n * 7 === day);
+}

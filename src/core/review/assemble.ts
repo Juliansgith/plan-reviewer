@@ -14,7 +14,7 @@ import { buildGraph, cyclicGroups, findCycle } from "../schedule/graph";
 import { scheduleTasks } from "../schedule/schedule";
 import { locateQuote, type Span } from "../text";
 import type { CheckedAnswer } from "./check";
-import { findDeadlineStatements, findInstructionsToReviewer, parseNumberWord } from "./signals";
+import { findDeadlineStatements, findInstructionsToReviewer, quoteStatesDay } from "./signals";
 import type { ReviewFinding, StoredReview } from "./types";
 
 type CodeFinding = ReviewFinding & { covers: Span[] };
@@ -23,14 +23,6 @@ const SEVERITY_RANK = { blocker: 0, warning: 1, note: 2 } as const;
 const days = (n: number) => `${n} day${n === 1 ? "" : "s"}`;
 const quoted = (text: string) => `"${text}"`;
 const overlaps = (a: Span, b: Span) => a.start < b.end && b.start < a.end;
-
-/** True when the quote states the day: it mentions n days, or n weeks for day 7n. */
-function quoteStatesDay(quote: string, day: number): boolean {
-  const numbers = [...quote.matchAll(/\b(\d+|[a-z]+(?:-[a-z]+)?)\b/gi)]
-    .map((match) => parseNumberWord(match[1]!))
-    .filter((n): n is number => n !== null && n > 0);
-  return numbers.some((n) => n === day || n * 7 === day);
-}
 
 export type AssembleMeta = StoredReview["meta"];
 
