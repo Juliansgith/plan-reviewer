@@ -7,7 +7,7 @@
       "owner": "Joan",
       "duration_days": 2,
       "depends_on": [],
-      "quote": "Book the main hall and the side room"
+      "quote": "| Book the main hall and the side room | Joan | 2 days | - |"
     },
     {
       "id": "T2",
@@ -17,7 +17,7 @@
       "depends_on": [
         "T1"
       ],
-      "quote": "Invite stallholders and confirm their pitches"
+      "quote": "| Invite stallholders and confirm their pitches | Martin | 10 days | Book the main hall and the side room |"
     },
     {
       "id": "T3",
@@ -27,7 +27,7 @@
       "depends_on": [
         "T1"
       ],
-      "quote": "Organise the tea and cake stall"
+      "quote": "| Organise the tea and cake stall | Joan | 4 days | Book the main hall and the side room |"
     },
     {
       "id": "T4",
@@ -37,7 +37,7 @@
       "depends_on": [
         "T1"
       ],
-      "quote": "Design the poster and flyer"
+      "quote": "| Design the poster and flyer | Leila | 3 days | Book the main hall and the side room |"
     },
     {
       "id": "T5",
@@ -47,7 +47,7 @@
       "depends_on": [
         "T4"
       ],
-      "quote": "Print the posters and put them up around town"
+      "quote": "| Print the posters and put them up around town | Leila | 1 week | Design the poster and flyer |"
     },
     {
       "id": "T6",
@@ -57,7 +57,7 @@
       "depends_on": [
         "T2"
       ],
-      "quote": "Draw up the floor plan for both rooms"
+      "quote": "| Draw up the floor plan for both rooms | Joan | 3 days | Invite stallholders and confirm their pitches |"
     },
     {
       "id": "T7",
@@ -67,7 +67,7 @@
       "depends_on": [
         "T6"
       ],
-      "quote": "Hire the extra tables and chairs"
+      "quote": "| Hire the extra tables and chairs | Martin | 2 days | Draw up the floor plan for both rooms |"
     },
     {
       "id": "T8",
@@ -77,8 +77,116 @@
       "depends_on": [
         "T6"
       ],
-      "quote": "Set up the volunteer rota for the day"
+      "quote": "| Set up the volunteer rota for the day | Leila | 3 days | Draw up the floor plan for both rooms |"
     }
   ],
-  "findings": []
+  "findings": [
+    {
+      "title": "Tight schedule against the deadline",
+      "detail": "The chain of tasks adds up to 20 days (booking 2, stallholders 10, floor plan 3, furniture 2, rota 3), leaving no slack before the 21-day deadline. Any delay in confirming stallholders would push the market date.",
+      "severity": "warning",
+      "quote": "The market is on a Saturday, 21 days after our kickoff meeting, and everything in the task list below needs to be finished by then.",
+      "source": "model",
+      "kind": "model"
+    },
+    {
+      "title": "Hall booking depends on go-ahead not in the plan",
+      "detail": "Joan will book the rooms only once the Council gives the go-ahead, but no task or date covers that approval. The whole schedule rests on it, and the office can hold the date only for a few days.",
+      "severity": "warning",
+      "quote": "Joan will book the main hall and the side room through the Town Hall office as soon as we have the go-ahead.",
+      "source": "model",
+      "kind": "model"
+    },
+    {
+      "title": "No task for the children's corner",
+      "detail": "The summary describes a children's corner with colouring and a book swap, and the floor plan must show it, but no task covers organising it or the volunteers for it.",
+      "severity": "warning",
+      "quote": "a small children's corner with colouring and a book swap",
+      "source": "model",
+      "kind": "model"
+    },
+    {
+      "title": "Pitch fees and float handling not scheduled",
+      "detail": "Martin will take pitch fees and Joan will sort out the float, but neither is a task with a duration. Money handling should be planned and assigned before the day.",
+      "severity": "note",
+      "quote": "take the pitch fees",
+      "source": "model",
+      "kind": "model"
+    },
+    {
+      "title": "On-the-day setup and clear-up not in the task list",
+      "detail": "Stallholders arrive at 8am and the rooms must be cleared and tables stacked by 5pm, but no task covers setting up or clearing away, or who does it.",
+      "severity": "note",
+      "quote": "The caretaker locks up at 5pm, by which time the rooms will be cleared and the tables stacked.",
+      "source": "model",
+      "kind": "model"
+    }
+  ],
+  "deadline_quote": "The market is on a Saturday, 21 days after our kickoff meeting, and everything in the task list below needs to be finished by then.",
+  "deadline_statements": [
+    {
+      "day": 21,
+      "quote": "The market is on a Saturday, 21 days after our kickoff meeting, and everything in the task list below needs to be finished by then."
+    }
+  ],
+  "dependency_evidence": [
+    {
+      "task_id": "T2",
+      "waits_for_id": "T1",
+      "quote": "| Invite stallholders and confirm their pitches | Martin | 10 days | Book the main hall and the side room |"
+    },
+    {
+      "task_id": "T3",
+      "waits_for_id": "T1",
+      "quote": "| Organise the tea and cake stall | Joan | 4 days | Book the main hall and the side room |"
+    },
+    {
+      "task_id": "T4",
+      "waits_for_id": "T1",
+      "quote": "| Design the poster and flyer | Leila | 3 days | Book the main hall and the side room |"
+    },
+    {
+      "task_id": "T5",
+      "waits_for_id": "T4",
+      "quote": "| Print the posters and put them up around town | Leila | 1 week | Design the poster and flyer |"
+    },
+    {
+      "task_id": "T6",
+      "waits_for_id": "T2",
+      "quote": "| Draw up the floor plan for both rooms | Joan | 3 days | Invite stallholders and confirm their pitches |"
+    },
+    {
+      "task_id": "T7",
+      "waits_for_id": "T6",
+      "quote": "| Hire the extra tables and chairs | Martin | 2 days | Draw up the floor plan for both rooms |"
+    },
+    {
+      "task_id": "T8",
+      "waits_for_id": "T6",
+      "quote": "| Set up the volunteer rota for the day | Leila | 3 days | Draw up the floor plan for both rooms |"
+    },
+    {
+      "task_id": "T5",
+      "waits_for_id": "T4",
+      "quote": "Once they are printed she will put them up in the library, the shops on the High Street and the surgery, and drop flyers at the two primary schools."
+    },
+    {
+      "task_id": "T6",
+      "waits_for_id": "T2",
+      "quote": "Once the stallholders are confirmed, Joan will draw up the floor plan for both rooms"
+    },
+    {
+      "task_id": "T8",
+      "waits_for_id": "T6",
+      "quote": "She needs the floor plan first to know how many helpers each area needs."
+    }
+  ],
+  "meta": {
+    "model": "deepseek/deepseek-v4.1-flash-1017",
+    "attempts": 1,
+    "prompt_tokens": 2276,
+    "completion_tokens": 1694,
+    "cost_usd": 0.00095,
+    "generated_at": "2026-11-20T22:37:15.187Z"
+  }
 }

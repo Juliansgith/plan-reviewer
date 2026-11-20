@@ -13,7 +13,7 @@
       "id": "T2",
       "name": "Apply for the road closure",
       "owner": "Ruth",
-      "duration_days": 10,
+      "duration_days": 14,
       "depends_on": [
         "T1"
       ],
@@ -45,7 +45,9 @@
       "name": "Arrange the event insurance",
       "owner": "Ruth",
       "duration_days": 3,
-      "depends_on": [],
+      "depends_on": [
+        "T4"
+      ],
       "quote": "Arrange the event insurance"
     },
     {
@@ -143,7 +145,7 @@
       "depends_on": [
         "T14"
       ],
-      "quote": "Run lantern-making workshops in both of the schools"
+      "quote": "Run the lantern-making workshops in both schools"
     },
     {
       "id": "T16",
@@ -178,27 +180,27 @@
     },
     {
       "id": "T19",
-      "name": "Hire the stage lighting and PA",
+      "name": "Arrange the hire of the stage lighting and a PA system",
       "owner": "Ruth",
       "duration_days": 3,
       "depends_on": [
         "T6"
       ],
-      "quote": "Once both bands are booked and have sent over what they need, Ruth will also arrange the hire of the stage lighting and a PA system for the green."
+      "quote": "Ruth will also arrange the hire of the stage lighting and a PA system for the green."
     },
     {
       "id": "T20",
-      "name": "Collect and store the finished lanterns",
+      "name": "Collect the finished lanterns from both schools and store them at the community centre",
       "owner": "Priya",
       "duration_days": 2,
       "depends_on": [
         "T15"
       ],
-      "quote": "When the workshops finish, Priya will collect the finished lanterns from both schools and store them at the community centre until the evening, which takes her two days."
+      "quote": "Priya will collect the finished lanterns from both schools and store them at the community centre until the evening, which takes her two days."
     },
     {
       "id": "T21",
-      "name": "Build the finale frame",
+      "name": "Build the frame for the finale",
       "owner": "Gareth",
       "duration_days": 8,
       "depends_on": [
@@ -208,20 +210,218 @@
     },
     {
       "id": "T22",
-      "name": "Write the press release and social media posts",
+      "name": "Write the press release and set up social media posts",
       "owner": "Tom",
       "duration_days": 3,
       "depends_on": [
         "T16"
       ],
-      "quote": "Once the poster design is done, Tom will also write the press release for the Pellerby Echo and set up the posts for our social media page, so that everything uses the same artwork."
+      "quote": "Tom will also write the press release for the Pellerby Echo and set up the posts for our social media page, so that everything uses the same artwork."
     }
   ],
   "findings": [
     {
-      "title": "One task has no owner",
-      "detail": "The task to arrange extra bins and a litter-pick team for the night is marked tbc, so nobody is responsible for it and it may not get done.",
-      "quote": "Arrange extra bins and a litter-pick team for the night"
+      "title": "Cannot finish by day 45",
+      "detail": "The earliest the work can finish is day 52, 7 days late. Ruth has 52 days of work and can only do one task at a time.",
+      "quote": "The festival is on the evening of day 45, counting from our kickoff meeting, and everything on the task list below has to be done by then.",
+      "severity": "blocker",
+      "source": "code",
+      "kind": "late"
+    },
+    {
+      "title": "No owner for \"Arrange extra bins and a litter-pick team for the night\"",
+      "detail": "Nobody is named for this task, so nobody is accountable for it. The schedule lets it run alongside other work, which may be optimistic.",
+      "quote": "Arrange extra bins and a litter-pick team for the night",
+      "severity": "warning",
+      "source": "code",
+      "kind": "no_owner"
+    },
+    {
+      "title": "Tasks appear only in the notes",
+      "detail": "Four tasks are described only in the notes and are missing from the task table: arranging the stage lighting and PA hire (Ruth, 3 days), collecting and storing the finished lanterns (Priya, 2 days), building the finale frame (Gareth, 8 days), and writing the press release and social media posts (Tom, 3 days). They need adding to the task list with owners and durations so they are tracked.",
+      "severity": "warning",
+      "quote": "Ruth will also arrange the hire of the stage lighting and a PA system for the green.",
+      "source": "model",
+      "kind": "model"
+    },
+    {
+      "title": "Notes add dependencies the table leaves out",
+      "detail": "The table shows the risk assessment and the insurance as independent of first aid, but the notes make the risk assessment wait for first aid cover and the insurance wait for the risk assessment. The notes also make printing wait for the road closure approval, which the table does not show. These need reconciling in the table.",
+      "severity": "warning",
+      "quote": "Ruth will write the risk assessment once Gareth has confirmed the first aid cover, because the council's template asks for the first aid arrangements to be written into it.",
+      "source": "model",
+      "kind": "model"
+    },
+    {
+      "title": "Sponsorship target may not cover costs",
+      "detail": "The plan hopes for £2,500 in sponsorship plus a £500 grant, but the biggest costs (lantern materials, road closure, toilets and barriers, stage lighting) are not costed. The lantern materials and finale frame both depend on sponsorship being in, so a shortfall would delay them.",
+      "severity": "warning",
+      "quote": "We are hoping to raise £2,500 in sponsorship, and the council's small events grant gives us £500.",
+      "source": "model",
+      "kind": "model"
+    },
+    {
+      "title": "Durations estimated for note-only tasks",
+      "detail": "The four tasks that appear only in the notes have no duration in the table. Durations of 3, 2, 8 and 3 days have been taken from the notes where stated and estimated where not; these should be confirmed.",
+      "severity": "note",
+      "quote": "He thinks that is three days.",
+      "source": "model",
+      "kind": "model"
+    },
+    {
+      "title": "Ruth holds most of the critical tasks",
+      "detail": "Ruth owns the route agreement, road closure, risk assessment, insurance, band bookings, food stalls, steward recruitment and briefing, and stage lighting hire. This concentration is a single point of failure if she is unavailable.",
+      "severity": "note",
+      "quote": "Ruth Marsh, our chair, has very kindly agreed to look after the permissions and the bookings again.",
+      "source": "model",
+      "kind": "model"
     }
-  ]
+  ],
+  "deadline_quote": "The festival is on the evening of day 45, counting from our kickoff meeting, and everything on the task list below has to be done by then.",
+  "deadline_statements": [
+    {
+      "day": 45,
+      "quote": "The festival is on the evening of day 45, counting from our kickoff meeting, and everything on the task list below has to be done by then."
+    }
+  ],
+  "dependency_evidence": [
+    {
+      "task_id": "T2",
+      "waits_for_id": "T1",
+      "quote": "Agree the route and the site plan with the council"
+    },
+    {
+      "task_id": "T3",
+      "waits_for_id": "T1",
+      "quote": "Agree the route and the site plan with the council"
+    },
+    {
+      "task_id": "T4",
+      "waits_for_id": "T1",
+      "quote": "Agree the route and the site plan with the council"
+    },
+    {
+      "task_id": "T7",
+      "waits_for_id": "T1",
+      "quote": "Agree the route and the site plan with the council"
+    },
+    {
+      "task_id": "T8",
+      "waits_for_id": "T1",
+      "quote": "Agree the route and the site plan with the council"
+    },
+    {
+      "task_id": "T9",
+      "waits_for_id": "T1",
+      "quote": "Agree the route and the site plan with the council"
+    },
+    {
+      "task_id": "T10",
+      "waits_for_id": "T1",
+      "quote": "Agree the route and the site plan with the council"
+    },
+    {
+      "task_id": "T12",
+      "waits_for_id": "T10",
+      "quote": "Recruit stewards"
+    },
+    {
+      "task_id": "T14",
+      "waits_for_id": "T13",
+      "quote": "Raise sponsorship from local businesses"
+    },
+    {
+      "task_id": "T15",
+      "waits_for_id": "T14",
+      "quote": "Order the lantern-making materials"
+    },
+    {
+      "task_id": "T16",
+      "waits_for_id": "T6",
+      "quote": "Book the Silver Band and the samba band"
+    },
+    {
+      "task_id": "T17",
+      "waits_for_id": "T16",
+      "quote": "Design the poster and flyer"
+    },
+    {
+      "task_id": "T18",
+      "waits_for_id": "T17",
+      "quote": "Print the posters and flyers"
+    },
+    {
+      "task_id": "T4",
+      "waits_for_id": "T3",
+      "quote": "Ruth will write the risk assessment once Gareth has confirmed the first aid cover, because the council's template asks for the first aid arrangements to be written into it."
+    },
+    {
+      "task_id": "T5",
+      "waits_for_id": "T4",
+      "quote": "Last year they would not give us a quote until they had seen the finished risk assessment, so Ruth will do the insurance after that."
+    },
+    {
+      "task_id": "T19",
+      "waits_for_id": "T6",
+      "quote": "Once both bands are booked and have sent over what they need, Ruth will also arrange the hire of the stage lighting and a PA system for the green."
+    },
+    {
+      "task_id": "T14",
+      "waits_for_id": "T13",
+      "quote": "we cannot order the lantern-making materials until that money is in"
+    },
+    {
+      "task_id": "T20",
+      "waits_for_id": "T15",
+      "quote": "When the workshops finish, Priya will collect the finished lanterns from both schools and store them at the community centre until the evening, which takes her two days."
+    },
+    {
+      "task_id": "T21",
+      "waits_for_id": "T13",
+      "quote": "He can start as soon as the sponsorship money is in to buy the timber, and it takes him eight days."
+    },
+    {
+      "task_id": "T16",
+      "waits_for_id": "T6",
+      "quote": "The poster and flyer name both bands, so Tom will start the design once the bands are booked."
+    },
+    {
+      "task_id": "T17",
+      "waits_for_id": "T2",
+      "quote": "The printers cannot have the poster until the road closure has been approved, because the poster has the route map and the closure times on it."
+    },
+    {
+      "task_id": "T22",
+      "waits_for_id": "T16",
+      "quote": "Once the poster design is done, Tom will also write the press release for the Pellerby Echo and set up the posts for our social media page, so that everything uses the same artwork."
+    },
+    {
+      "task_id": "T10",
+      "waits_for_id": "T1",
+      "quote": "Ruth will recruit them, mostly from last year's list and the sailing club, once the route is agreed and we know how many points need covering."
+    },
+    {
+      "task_id": "T11",
+      "waits_for_id": "T4",
+      "quote": "She will do the steward briefing herself once the risk assessment is written, so that everyone knows the closure points, the first aid tent and what to do if a child gets lost."
+    },
+    {
+      "task_id": "T12",
+      "waits_for_id": "T10",
+      "quote": "Once Ruth has recruited the stewards, Hannah will draw up the volunteer rota, covering the stewards, the helpers at the gathering point and the people looking after the finale frame."
+    },
+    {
+      "task_id": "T8",
+      "waits_for_id": "T1",
+      "quote": "Gareth will hire the toilets and the crowd barriers once the site plan is agreed."
+    }
+  ],
+  "meta": {
+    "model": "deepseek/deepseek-v4.1-flash-1017",
+    "attempts": 1,
+    "prompt_tokens": 2692,
+    "completion_tokens": 3763,
+    "cost_usd": 0.001728,
+    "generated_at": "2026-11-20T22:37:38.116Z"
+  }
 }

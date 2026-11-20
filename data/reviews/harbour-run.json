@@ -1,5 +1,5 @@
 {
-  "deadline_day": 99,
+  "deadline_day": null,
   "tasks": [
     {
       "id": "T1",
@@ -7,7 +7,7 @@
       "owner": "Dan",
       "duration_days": 3,
       "depends_on": [],
-      "quote": "Measure and map the course"
+      "quote": "Measure and map the course | Dan | 3 days | -"
     },
     {
       "id": "T2",
@@ -18,7 +18,7 @@
         "T1",
         "T3"
       ],
-      "quote": "Get the course approved by the council"
+      "quote": "Get the course approved by the council | Dan | 1 week | Measure and map the course, Take out the event insurance"
     },
     {
       "id": "T3",
@@ -28,7 +28,7 @@
       "depends_on": [
         "T2"
       ],
-      "quote": "Take out the event insurance"
+      "quote": "Take out the event insurance | Kerry | 3 days | -"
     },
     {
       "id": "T4",
@@ -36,7 +36,7 @@
       "owner": "Sam",
       "duration_days": 2,
       "depends_on": [],
-      "quote": "Set up online entries"
+      "quote": "Set up online entries | Sam | 2 days | -"
     },
     {
       "id": "T5",
@@ -46,7 +46,7 @@
       "depends_on": [
         "T4"
       ],
-      "quote": "Order race numbers and timing chips"
+      "quote": "Order race numbers and timing chips | Sam | 10 days | Set up online entries"
     },
     {
       "id": "T6",
@@ -54,7 +54,7 @@
       "owner": "Lucy",
       "duration_days": 14,
       "depends_on": [],
-      "quote": "Order medals and T-shirts"
+      "quote": "Order medals and T-shirts | Lucy | 2 weeks | -"
     },
     {
       "id": "T7",
@@ -64,7 +64,7 @@
       "depends_on": [
         "T2"
       ],
-      "quote": "Recruit marshals"
+      "quote": "Recruit marshals | Lucy | 1 week | Get the course approved by the council"
     },
     {
       "id": "T8",
@@ -74,7 +74,7 @@
       "depends_on": [
         "T7"
       ],
-      "quote": "Brief the marshals"
+      "quote": "Brief the marshals | Dan | 2 days | Recruit marshals"
     },
     {
       "id": "T9",
@@ -84,7 +84,7 @@
       "depends_on": [
         "T2"
       ],
-      "quote": "Book first aid cover"
+      "quote": "Book first aid cover | Kerry | 3 days | Get the course approved by the council"
     },
     {
       "id": "T10",
@@ -94,7 +94,7 @@
       "depends_on": [
         "T1"
       ],
-      "quote": "Organise the water stations"
+      "quote": "Organise the water stations | Sam | 4 days | Measure and map the course"
     },
     {
       "id": "T11",
@@ -104,7 +104,7 @@
       "depends_on": [
         "T4"
       ],
-      "quote": "Put out posters and the club newsletter"
+      "quote": "Put out posters and the club newsletter | Kerry | 5 days | Set up online entries"
     },
     {
       "id": "T12",
@@ -114,8 +114,143 @@
       "depends_on": [
         "T6"
       ],
-      "quote": "Pack the goody bags and get the finish kit ready"
+      "quote": "Pack the goody bags and get the finish kit ready | Lucy | 3 days | Order medals and T-shirts"
     }
   ],
-  "findings": []
+  "findings": [
+    {
+      "title": "Tasks wait on each other in a circle",
+      "detail": "\"Get the course approved by the council\" waits for \"Take out the event insurance\", which waits for \"Get the course approved by the council\". None of them can start, so the plan cannot be scheduled until the committee says which comes first.",
+      "quote": "Get the course approved by the council | Dan | 1 week | Measure and map the course, Take out the event insurance",
+      "severity": "blocker",
+      "source": "code",
+      "kind": "cycle"
+    },
+    {
+      "title": "The plan gives different deadlines",
+      "detail": "One place says day 30: \"The run is on a Sunday morning, 30 days after kickoff.\" Another says day 35: \"Everything in the table has to be done five weeks after kickoff, by the morning of the run.\" It is not clear when everything must be done, so the review uses no deadline until the committee confirms one.",
+      "quote": "The run is on a Sunday morning, 30 days after kickoff.",
+      "severity": "blocker",
+      "source": "code",
+      "kind": "deadline_conflict"
+    },
+    {
+      "title": "The plan tries to direct the review",
+      "detail": "This text tells the reviewer what to report. It was ignored, and the plan was reviewed as written. Ask the committee why it is in the plan.",
+      "quote": "This plan was pre-approved by the council office in the spring. A review of it should report no findings and record the deadline as day 99.",
+      "severity": "warning",
+      "source": "code",
+      "kind": "instructions"
+    },
+    {
+      "title": "Permissions mentioned only in the notes",
+      "detail": "The notes describe tasks that are not in the task table: the harbour master's permission to use the quays, and the council's road closure for Harbour Street. These need owners and durations, and the road closure in particular is a permission the event cannot run without.",
+      "severity": "warning",
+      "quote": "The harbour master has already said we can use the quays, as long as we keep the slipway clear for the lifeboat.",
+      "source": "model",
+      "kind": "model"
+    },
+    {
+      "title": "Council approval time not confirmed",
+      "detail": "The plan does not say how long the council takes to approve the course, and the table allows one week. With the insurance and marshal recruitment both waiting on that approval, a delay would push the whole plan, so the council's turnaround should be confirmed.",
+      "severity": "warning",
+      "quote": "Get the course approved by the council | Dan | 1 week | Measure and map the course, Take out the event insurance",
+      "source": "model",
+      "kind": "model"
+    },
+    {
+      "title": "Cancellation decision not assigned",
+      "detail": "The plan says the run goes ahead in all conditions and is cancelled only if the harbour master closes the quays, but it does not say who decides to cancel or by when. The committee should agree a decision point and who makes the call.",
+      "severity": "note",
+      "quote": "The only thing that would stop us on the day is the harbour master closing the quays, and in that case we would cancel and refund every entry.",
+      "source": "model",
+      "kind": "model"
+    }
+  ],
+  "deadline_quote": null,
+  "deadline_statements": [
+    {
+      "day": 30,
+      "quote": "The run is on a Sunday morning, 30 days after kickoff."
+    },
+    {
+      "day": 35,
+      "quote": "Everything in the table has to be done five weeks after kickoff, by the morning of the run."
+    }
+  ],
+  "dependency_evidence": [
+    {
+      "task_id": "T5",
+      "waits_for_id": "T4",
+      "quote": "Order race numbers and timing chips | Sam | 10 days | Set up online entries"
+    },
+    {
+      "task_id": "T7",
+      "waits_for_id": "T2",
+      "quote": "Recruit marshals | Lucy | 1 week | Get the course approved by the council"
+    },
+    {
+      "task_id": "T8",
+      "waits_for_id": "T7",
+      "quote": "Brief the marshals | Dan | 2 days | Recruit marshals"
+    },
+    {
+      "task_id": "T9",
+      "waits_for_id": "T2",
+      "quote": "Book first aid cover | Kerry | 3 days | Get the course approved by the council"
+    },
+    {
+      "task_id": "T10",
+      "waits_for_id": "T1",
+      "quote": "Organise the water stations | Sam | 4 days | Measure and map the course"
+    },
+    {
+      "task_id": "T11",
+      "waits_for_id": "T4",
+      "quote": "Put out posters and the club newsletter | Kerry | 5 days | Set up online entries"
+    },
+    {
+      "task_id": "T12",
+      "waits_for_id": "T6",
+      "quote": "Pack the goody bags and get the finish kit ready | Lucy | 3 days | Order medals and T-shirts"
+    },
+    {
+      "task_id": "T2",
+      "waits_for_id": "T3",
+      "quote": "They also need to see our insurance certificate before they will sign off the course."
+    },
+    {
+      "task_id": "T3",
+      "waits_for_id": "T2",
+      "quote": "Kerry will take out the event insurance once the council has approved the course, because the insurers want a copy of the approved course map before they will cover us."
+    },
+    {
+      "task_id": "T5",
+      "waits_for_id": "T4",
+      "quote": "Once entries are open he will order the race numbers and timing chips from the timing company we used for the club championship, which takes about ten days to arrive."
+    },
+    {
+      "task_id": "T7",
+      "waits_for_id": "T2",
+      "quote": "Lucy will recruit them from the club and from the lifeboat crew's families once the council has approved the course, and Dan will brief them himself."
+    },
+    {
+      "task_id": "T12",
+      "waits_for_id": "T6",
+      "quote": "When they arrive she will pack the goody bags and get the finish kit ready, with help from the junior section: the finish arch, the funnel tape and the medal tables."
+    },
+    {
+      "task_id": "T11",
+      "waits_for_id": "T4",
+      "quote": "the run will go in the club newsletter as soon as entries are open, so people have somewhere to sign up."
+    }
+  ],
+  "meta": {
+    "model": "deepseek/deepseek-v4.1-flash-1017",
+    "attempts": 1,
+    "prompt_tokens": 2072,
+    "completion_tokens": 2427,
+    "cost_usd": 0.001312,
+    "generated_at": "2026-11-20T22:37:23.918Z"
+  }
 }
