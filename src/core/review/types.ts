@@ -93,6 +93,8 @@ export type ReviewOptions = {
   maxAttempts?: number;
   /** Absolute time (ms since epoch) by which the review must be done. */
   deadlineAt?: number;
+  /** Called when an answer is sent back for repair, with that answer's problems. */
+  onRepair?: (attempt: number, errors: string[]) => void;
   now?: () => Date;
 };
 

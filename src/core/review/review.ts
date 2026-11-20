@@ -78,6 +78,7 @@ export async function reviewPlan(
     }
 
     if (attempt < maxAttempts) {
+      options.onRepair?.(attempt, errors);
       messages.push({ role: "assistant", content: response.content });
       messages.push({ role: "user", content: repairMessage(errors) });
     }

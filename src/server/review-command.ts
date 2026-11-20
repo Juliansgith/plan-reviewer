@@ -83,7 +83,16 @@ export async function runReviewCommand(
   io.stderr(`Reviewing ${planPath} with ${model} ...`);
   let outcome;
   try {
-    outcome = await reviewPlan(plan, client, { model, deadlineAt: Date.now() + budgetMs });
+    outcome = await reviewPlan(plan, client, {
+      model,
+      deadlineAt: Date.now() + budgetMs,
+      onRepair: (attempt, errors) => {
+        io.stderr(
+          `Answer ${attempt} had ${count(errors.length, "problem")}; asking the model to fix them:`,
+        );
+        for (const error of errors) io.stderr(`  - ${error}`);
+      },
+    });
   } catch (error) {
     if (error instanceof ModelServiceError) {
       io.stderr(error.message);

@@ -42,7 +42,13 @@ for (const model of models) {
     const text = readFileSync(`data/plans/${planName}.md`, "utf8");
     const started = Date.now();
     try {
-      const outcome = await reviewPlan(text, client, { model });
+      const repairs: string[] = [];
+      const outcome = await reviewPlan(text, client, {
+        model,
+        onRepair: (attempt, errors) =>
+          repairs.push(...errors.map((e) => `answer ${attempt}: ${e}`)),
+      });
+      for (const repair of repairs) console.log(`    ~ ${repair}`);
       const seconds = (Date.now() - started) / 1000;
       if (!outcome.ok) {
         rows.push({

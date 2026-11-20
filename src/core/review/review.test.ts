@@ -244,6 +244,18 @@ describe("reviewPlan: repairs and refusals", () => {
     expect(repair.content).toMatch(/not in the plan/);
   });
 
+  it("reports each repair round's problems to the caller", async () => {
+    const rounds: [number, string[]][] = [];
+    const model = new ScriptedModel([json(badTaskQuote()), json(fixture("spring-market"))]);
+    await reviewPlan(plan("spring-market"), model, {
+      ...options,
+      onRepair: (attempt, errors) => rounds.push([attempt, errors]),
+    });
+    expect(rounds).toHaveLength(1);
+    expect(rounds[0]![0]).toBe(1);
+    expect(rounds[0]![1].join("\n")).toContain("Book the big hall and the side room");
+  });
+
   it("refuses after three attempts when a task quote is never right", async () => {
     const model = new ScriptedModel([
       json(badTaskQuote()),
