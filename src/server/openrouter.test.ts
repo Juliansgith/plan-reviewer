@@ -83,14 +83,22 @@ describe("OpenRouterClient", () => {
   });
 
   it("waits as long as Retry-After asks on 429, then succeeds", async () => {
-    const { instance, calls, delays } = client([failure(429, "slow down", { "retry-after": "3" }), ok("{}")]);
+    const { instance, calls, delays } = client([
+      failure(429, "slow down", { "retry-after": "3" }),
+      ok("{}"),
+    ]);
     await instance.complete(request);
     expect(calls).toHaveLength(2);
     expect(delays).toEqual([3000]);
   });
 
   it("retries server errors with growing delays, then reports the service unavailable", async () => {
-    const { instance, calls, delays } = client([failure(503), failure(502), failure(500), failure(503)]);
+    const { instance, calls, delays } = client([
+      failure(503),
+      failure(502),
+      failure(500),
+      failure(503),
+    ]);
     const error = await instance.complete(request).catch((e: unknown) => e);
     expect(error).toBeInstanceOf(ModelServiceError);
     expect((error as ModelServiceError).kind).toBe("unavailable");
@@ -130,7 +138,9 @@ describe("OpenRouterClient", () => {
 
   it("reports a timeout when the caller's signal fires", async () => {
     const { instance } = client([new DOMException("The operation timed out.", "TimeoutError")]);
-    const error = await instance.complete({ ...request, signal: AbortSignal.timeout(1) }).catch((e: unknown) => e);
+    const error = await instance
+      .complete({ ...request, signal: AbortSignal.timeout(1) })
+      .catch((e: unknown) => e);
     expect((error as ModelServiceError).kind).toBe("timeout");
   });
 
@@ -142,9 +152,15 @@ describe("OpenRouterClient", () => {
 
   it("treats a missing message as empty content, so the review asks again", async () => {
     const { instance } = client([
-      new Response(JSON.stringify({ model: "m", choices: [{ message: { content: null }, finish_reason: "stop" }] }), {
-        status: 200,
-      }),
+      new Response(
+        JSON.stringify({
+          model: "m",
+          choices: [{ message: { content: null }, finish_reason: "stop" }],
+        }),
+        {
+          status: 200,
+        },
+      ),
     ]);
     await expect(instance.complete(request)).resolves.toMatchObject({ content: "" });
   });

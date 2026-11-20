@@ -8,8 +8,14 @@ import { parseReview } from "../core/contracts";
 import { runReviewCommand } from "./review-command";
 
 const root = new URL("../../", import.meta.url);
-const planPath = new URL("data/plans/spring-market.md", root).pathname.replace(/^\/([A-Za-z]:)/, "$1");
-const answer = readFileSync(new URL("src/core/review/__fixtures__/spring-market.model.json", root), "utf8");
+const planPath = new URL("data/plans/spring-market.md", root).pathname.replace(
+  /^\/([A-Za-z]:)/,
+  "$1",
+);
+const answer = readFileSync(
+  new URL("src/core/review/__fixtures__/spring-market.model.json", root),
+  "utf8",
+);
 
 const completion = (content: string) =>
   new Response(
@@ -76,7 +82,11 @@ describe("./review command", () => {
     const bad = JSON.parse(answer);
     bad.tasks[0].quote = "Words that are not in the plan";
     const out = join(dir, "out.json");
-    const code = await run([planPath, out], env, [1, 2, 3].map(() => completion(JSON.stringify(bad))));
+    const code = await run(
+      [planPath, out],
+      env,
+      [1, 2, 3].map(() => completion(JSON.stringify(bad))),
+    );
     expect(code).toBe(1);
     expect(existsSync(out)).toBe(false);
     expect(messages.join("\n")).toContain("Words that are not in the plan");
@@ -84,21 +94,35 @@ describe("./review command", () => {
 
   it("exits 2 when OpenRouter refuses the key, and 3 when it is unavailable", async () => {
     const out = join(dir, "out.json");
-    expect(await run([planPath, out], env, [new Response('{"error":{"message":"no"}}', { status: 401 })])).toBe(2);
-    expect(await run([planPath, out], env, [500, 500, 500, 500].map((s) => new Response("{}", { status: s })))).toBe(3);
+    expect(
+      await run([planPath, out], env, [
+        new Response('{"error":{"message":"no"}}', { status: 401 }),
+      ]),
+    ).toBe(2);
+    expect(
+      await run(
+        [planPath, out],
+        env,
+        [500, 500, 500, 500].map((s) => new Response("{}", { status: s })),
+      ),
+    ).toBe(3);
     expect(existsSync(out)).toBe(false);
   });
 
   it("uses REVIEW_MODEL when it is set", async () => {
     const out = join(dir, "out.json");
     let sentModel = "";
-    const code = await runReviewCommand([planPath, out], { ...env, REVIEW_MODEL: "qwen/qwen3.8-flash" }, {
-      stderr: () => {},
-      fetch: (async (_url: unknown, init?: RequestInit) => {
-        sentModel = JSON.parse(String(init?.body)).model;
-        return completion(answer);
-      }) as typeof fetch,
-    });
+    const code = await runReviewCommand(
+      [planPath, out],
+      { ...env, REVIEW_MODEL: "qwen/qwen3.8-flash" },
+      {
+        stderr: () => {},
+        fetch: (async (_url: unknown, init?: RequestInit) => {
+          sentModel = JSON.parse(String(init?.body)).model;
+          return completion(answer);
+        }) as typeof fetch,
+      },
+    );
     expect(code).toBe(0);
     expect(sentModel).toBe("qwen/qwen3.8-flash");
   });
@@ -122,15 +146,19 @@ describe("the real CLI process", () => {
     writeFileSync(join(dir, "marker"), "");
     try {
       const code = await new Promise<number>((resolve) => {
-        const child = spawn(process.execPath, ["--import", "tsx", "src/cli/review.ts", planPath, out], {
-          cwd: new URL(".", root),
-          env: {
-            ...process.env,
-            OPENROUTER_API_KEY: "sk-or-test",
-            OPENROUTER_BASE_URL: `http://127.0.0.1:${port}`,
+        const child = spawn(
+          process.execPath,
+          ["--import", "tsx", "src/cli/review.ts", planPath, out],
+          {
+            cwd: new URL(".", root),
+            env: {
+              ...process.env,
+              OPENROUTER_API_KEY: "sk-or-test",
+              OPENROUTER_BASE_URL: `http://127.0.0.1:${port}`,
+            },
+            stdio: "ignore",
           },
-          stdio: "ignore",
-        });
+        );
         child.on("exit", (exitCode) => resolve(exitCode ?? -1));
       });
       expect(code).toBe(0);
