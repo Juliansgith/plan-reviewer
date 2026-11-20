@@ -9,7 +9,7 @@
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { scoreReview, EXPECTATIONS } from "../core/review/eval";
 import { reviewPlan } from "../core/review/review";
-import { ModelServiceError } from "../core/review/types";
+import { ModelServiceError, type Reasoning } from "../core/review/types";
 import { DEFAULT_MODEL, OpenRouterClient } from "../server/openrouter";
 
 const apiKey = process.env.OPENROUTER_API_KEY?.trim();
@@ -45,6 +45,7 @@ for (const model of models) {
       const repairs: string[] = [];
       const outcome = await reviewPlan(text, client, {
         model,
+        reasoning: (process.env.REVIEW_REASONING?.trim() || "off") as Reasoning,
         onRepair: (attempt, errors) =>
           repairs.push(...errors.map((e) => `answer ${attempt}: ${e}`)),
       });

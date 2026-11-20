@@ -103,6 +103,7 @@ export class OpenRouterClient implements ChatClient {
       max_tokens: request.maxTokens,
       response_format: { type: "json_schema", json_schema: request.responseFormat },
       provider: { require_parameters: true },
+      ...(request.reasoning && { reasoning: request.reasoning }),
     });
 
     for (let attempt = 0; ; attempt++) {

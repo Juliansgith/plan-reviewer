@@ -252,7 +252,10 @@ describe("reviewPlan: repairs and refusals", () => {
     // Measured: DeepSeek V4.1 Flash with reasoning on used its whole output
     // budget without answering in 3 of 6 runs; with it off, 0 of 6, and every
     // fact still right (docs/DECISIONS.md, D5).
-    const model = new ScriptedModel([json(fixture("spring-market")), json(fixture("spring-market"))]);
+    const model = new ScriptedModel([
+      json(fixture("spring-market")),
+      json(fixture("spring-market")),
+    ]);
     await reviewPlan(plan("spring-market"), model, options);
     expect(model.requests[0]!.reasoning).toEqual({ enabled: false });
     await reviewPlan(plan("spring-market"), model, { ...options, reasoning: "medium" });

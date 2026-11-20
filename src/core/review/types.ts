@@ -54,12 +54,24 @@ export type ChatMessage = { role: "system" | "user" | "assistant"; content: stri
 
 export type JsonSchemaFormat = { name: string; strict: boolean; schema: Record<string, unknown> };
 
+/** How much the model may reason before answering. "off" is the default; see D5. */
+export const REASONING_LEVELS = ["off", "low", "medium", "high"] as const;
+export type Reasoning = (typeof REASONING_LEVELS)[number];
+
+/** OpenRouter's unified reasoning parameter. */
+export type ReasoningParam = { enabled: false } | { effort: Exclude<Reasoning, "off"> };
+
+export function reasoningParam(level: Reasoning): ReasoningParam {
+  return level === "off" ? { enabled: false } : { effort: level };
+}
+
 export type ChatRequest = {
   model: string;
   messages: ChatMessage[];
   responseFormat: JsonSchemaFormat;
   temperature: number;
   maxTokens: number;
+  reasoning?: ReasoningParam;
   signal?: AbortSignal;
 };
 
@@ -95,6 +107,8 @@ export type ReviewOptions = {
   deadlineAt?: number;
   /** Called when an answer is sent back for repair, with that answer's problems. */
   onRepair?: (attempt: number, errors: string[]) => void;
+  /** Model reasoning; "off" unless set. */
+  reasoning?: Reasoning;
   now?: () => Date;
 };
 

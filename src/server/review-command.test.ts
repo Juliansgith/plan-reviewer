@@ -138,13 +138,19 @@ describe("./review command", () => {
     };
     expect(await runReviewCommand([planPath, join(dir, "a.json")], env, io)).toBe(0);
     expect(
-      await runReviewCommand([planPath, join(dir, "b.json")], { ...env, REVIEW_REASONING: "low" }, io),
+      await runReviewCommand(
+        [planPath, join(dir, "b.json")],
+        { ...env, REVIEW_REASONING: "low" },
+        io,
+      ),
     ).toBe(0);
     expect(sent).toEqual([{ enabled: false }, { effort: "low" }]);
   });
 
   it("exits 2 for an unknown REVIEW_REASONING value", async () => {
-    expect(await run([planPath, join(dir, "c.json")], { ...env, REVIEW_REASONING: "lots" })).toBe(2);
+    expect(await run([planPath, join(dir, "c.json")], { ...env, REVIEW_REASONING: "lots" })).toBe(
+      2,
+    );
     expect(messages.join("\n")).toContain("REVIEW_REASONING must be one of off, low, medium, high");
   });
 });

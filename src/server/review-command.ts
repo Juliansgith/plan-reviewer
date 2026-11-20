@@ -11,7 +11,7 @@
 import { mkdirSync, readFileSync, renameSync, rmSync, writeFileSync } from "node:fs";
 import { dirname } from "node:path";
 import { DEFAULT_BUDGET_MS, reviewPlan } from "../core/review/review";
-import { ModelServiceError } from "../core/review/types";
+import { ModelServiceError, REASONING_LEVELS, type Reasoning } from "../core/review/types";
 import { DEFAULT_MODEL, OpenRouterClient } from "./openrouter";
 
 export type CommandIo = {
@@ -28,6 +28,7 @@ Environment:
   OPENROUTER_API_KEY      required; get one at https://openrouter.ai/keys
   REVIEW_MODEL            optional; default ${DEFAULT_MODEL}
   REVIEW_TIMEOUT_SECONDS  optional; default ${DEFAULT_BUDGET_MS / 1000}
+  REVIEW_REASONING        optional; off (default), low, medium or high
 
 Exit codes: 0 written, 1 no usable review, 2 usage or setup problem,
 3 model service problem. No file is written unless the exit code is 0.`;
@@ -69,6 +70,11 @@ export async function runReviewCommand(
     return 2;
   }
   const model = env.REVIEW_MODEL?.trim() || DEFAULT_MODEL;
+  const reasoning = (env.REVIEW_REASONING?.trim().toLowerCase() || "off") as Reasoning;
+  if (!REASONING_LEVELS.includes(reasoning)) {
+    io.stderr(`REVIEW_REASONING must be one of ${REASONING_LEVELS.join(", ")}.`);
+    return 2;
+  }
   const seconds = Number(env.REVIEW_TIMEOUT_SECONDS);
   const budgetMs =
     Number.isFinite(seconds) && seconds >= 10 ? Math.min(seconds, 3600) * 1000 : DEFAULT_BUDGET_MS;
@@ -85,6 +91,7 @@ export async function runReviewCommand(
   try {
     outcome = await reviewPlan(plan, client, {
       model,
+      reasoning,
       deadlineAt: Date.now() + budgetMs,
       onRepair: (attempt, errors) => {
         io.stderr(

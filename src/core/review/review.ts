@@ -6,7 +6,7 @@
 import { assembleReview } from "./assemble";
 import { checkAnswer, parseModelJson } from "./check";
 import { buildMessages, repairMessage, REVIEW_JSON_SCHEMA } from "./prompt";
-import type { ChatClient, ReviewOptions, ReviewOutcome } from "./types";
+import { reasoningParam, type ChatClient, type ReviewOptions, type ReviewOutcome } from "./types";
 
 export const DEFAULT_MAX_ATTEMPTS = 3;
 /** ./review gets 300 s per plan from the graders; leave room to start and write. */
@@ -43,6 +43,7 @@ export async function reviewPlan(
       responseFormat: REVIEW_JSON_SCHEMA,
       temperature: 0,
       maxTokens: MAX_OUTPUT_TOKENS,
+      reasoning: reasoningParam(options.reasoning ?? "off"),
       signal: AbortSignal.timeout(Math.min(remaining, MAX_CALL_MS)),
     });
     servedBy = response.model || servedBy;
@@ -52,10 +53,9 @@ export async function reviewPlan(
     usage.cost =
       usage.cost === null || cost === undefined || cost === null ? null : usage.cost + cost;
 
-    if (response.finishReason === "length") {
-      errors = [
-        "The answer was cut off because it was too long. Keep quotes short and return the complete JSON.",
-      ];
+    const cutOff = response.finishReason === "length";
+    if (cutOff) {
+      errors = ["The answer was cut off before it was complete."];
     } else {
       const parsed = parseModelJson(response.content);
       if (!parsed.ok) {
@@ -79,8 +79,11 @@ export async function reviewPlan(
 
     if (attempt < maxAttempts) {
       options.onRepair?.(attempt, errors);
-      messages.push({ role: "assistant", content: response.content });
-      messages.push({ role: "user", content: repairMessage(errors) });
+      // A cut-off answer has nothing worth repairing: ask again from the start.
+      if (!cutOff) {
+        messages.push({ role: "assistant", content: response.content });
+        messages.push({ role: "user", content: repairMessage(errors) });
+      }
     }
   }
   return { ok: false, errors, attempts: maxAttempts };
