@@ -126,6 +126,27 @@ describe("./review command", () => {
     expect(code).toBe(0);
     expect(sentModel).toBe("qwen/qwen3.8-flash");
   });
+
+  it("sends reasoning off by default, and REVIEW_REASONING when it is set", async () => {
+    const sent: unknown[] = [];
+    const io = {
+      stderr: () => {},
+      fetch: (async (_url: unknown, init?: RequestInit) => {
+        sent.push(JSON.parse(String(init?.body)).reasoning);
+        return completion(answer);
+      }) as typeof fetch,
+    };
+    expect(await runReviewCommand([planPath, join(dir, "a.json")], env, io)).toBe(0);
+    expect(
+      await runReviewCommand([planPath, join(dir, "b.json")], { ...env, REVIEW_REASONING: "low" }, io),
+    ).toBe(0);
+    expect(sent).toEqual([{ enabled: false }, { effort: "low" }]);
+  });
+
+  it("exits 2 for an unknown REVIEW_REASONING value", async () => {
+    expect(await run([planPath, join(dir, "c.json")], { ...env, REVIEW_REASONING: "lots" })).toBe(2);
+    expect(messages.join("\n")).toContain("REVIEW_REASONING must be one of off, low, medium, high");
+  });
 });
 
 describe("the real CLI process", () => {

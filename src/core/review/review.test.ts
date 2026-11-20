@@ -11,19 +11,23 @@ const plan = (name: string) =>
 const fixture = (name: string): Record<string, unknown> =>
   JSON.parse(readFileSync(new URL(`./__fixtures__/${name}.model.json`, import.meta.url), "utf8"));
 
+/** A reply that ran out of output tokens before it finished. */
+const CUT_OFF = { cutOff: '{"deadline_day": 21, "tasks": [' };
+
 /** A model that replies from a script and records what it was asked. */
 class ScriptedModel implements ChatClient {
   readonly requests: ChatRequest[] = [];
-  constructor(private readonly replies: (string | Error)[]) {}
+  constructor(private readonly replies: (string | Error | typeof CUT_OFF)[]) {}
   async complete(request: ChatRequest) {
     this.requests.push(structuredClone({ ...request, signal: undefined }));
     const reply = this.replies.shift();
     if (reply === undefined) throw new Error("script ran out of replies");
     if (reply instanceof Error) throw reply;
+    const cutOff = typeof reply === "object";
     return {
-      content: reply,
+      content: cutOff ? reply.cutOff : reply,
       model: request.model,
-      finishReason: "stop",
+      finishReason: cutOff ? "length" : "stop",
       usage: { promptTokens: 100, completionTokens: 50, cost: 0.0001 },
     };
   }
@@ -242,6 +246,26 @@ describe("reviewPlan: repairs and refusals", () => {
     expect(repair.role).toBe("user");
     expect(repair.content).toContain('"Book the big hall and the side room"');
     expect(repair.content).toMatch(/not in the plan/);
+  });
+
+  it("turns the model's reasoning off unless asked, because it can run away", async () => {
+    // Measured: DeepSeek V4.1 Flash with reasoning on used its whole output
+    // budget without answering in 3 of 6 runs; with it off, 0 of 6, and every
+    // fact still right (docs/DECISIONS.md, D5).
+    const model = new ScriptedModel([json(fixture("spring-market")), json(fixture("spring-market"))]);
+    await reviewPlan(plan("spring-market"), model, options);
+    expect(model.requests[0]!.reasoning).toEqual({ enabled: false });
+    await reviewPlan(plan("spring-market"), model, { ...options, reasoning: "medium" });
+    expect(model.requests[1]!.reasoning).toEqual({ effort: "medium" });
+  });
+
+  it("asks again from the start after an answer that was cut off", async () => {
+    const model = new ScriptedModel([CUT_OFF, json(fixture("spring-market"))]);
+    const outcome = await reviewPlan(plan("spring-market"), model, options);
+    expect(outcome).toMatchObject({ ok: true, attempts: 2 });
+    // A truncated answer has nothing worth repairing: the retry is a clean
+    // copy of the first request, not a longer conversation.
+    expect(model.requests[1]!.messages).toEqual(model.requests[0]!.messages);
   });
 
   it("reports each repair round's problems to the caller", async () => {

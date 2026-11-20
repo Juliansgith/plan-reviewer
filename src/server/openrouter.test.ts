@@ -70,6 +70,13 @@ describe("OpenRouterClient", () => {
       response_format: { type: "json_schema", json_schema: REVIEW_JSON_SCHEMA },
       provider: { require_parameters: true },
     });
+    expect(body).not.toHaveProperty("reasoning");
+  });
+
+  it("passes the reasoning setting through when the request has one", async () => {
+    const { instance, calls } = client([ok("{}")]);
+    await instance.complete({ ...request, reasoning: { enabled: false } });
+    expect(JSON.parse(String(calls[0]!.init.body)).reasoning).toEqual({ enabled: false });
   });
 
   it("returns the content, the model that answered, the finish reason and the usage", async () => {
