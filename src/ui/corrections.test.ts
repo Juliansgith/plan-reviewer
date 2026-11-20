@@ -10,7 +10,13 @@ import {
   saveCorrections,
 } from "./corrections";
 
-const t = (id: string, name: string, days: number, owner: string | null = "Ruth", depends_on: string[] = []): Task => ({
+const t = (
+  id: string,
+  name: string,
+  days: number,
+  owner: string | null = "Ruth",
+  depends_on: string[] = [],
+): Task => ({
   id,
   name,
   owner,
@@ -18,7 +24,10 @@ const t = (id: string, name: string, days: number, owner: string | null = "Ruth"
   depends_on,
 });
 
-const original = { deadline_day: 45, tasks: [t("T1", "Road closure", 14), t("T2", "Print posters", 4, "Tom", ["T1"])] };
+const original = {
+  deadline_day: 45,
+  tasks: [t("T1", "Road closure", 14), t("T2", "Print posters", 4, "Tom", ["T1"])],
+};
 
 describe("diffCorrections and describeChange", () => {
   it("finds nothing when nothing changed", () => {
@@ -61,13 +70,17 @@ describe("compareOutcomes", () => {
   it("says how much sooner and whether it is still late", () => {
     const before = run([t("A", "A", 10), t("B", "B", 10)], 15);
     const after = run([t("A", "A", 10), t("B", "B", 7)], 15);
-    expect(compareOutcomes(before, after, 15)).toBe("Finishes on day 17 instead of day 20, 3 days sooner. Still 2 days late.");
+    expect(compareOutcomes(before, after, 15)).toBe(
+      "Finishes on day 17 instead of day 20, 3 days sooner. Still 2 days late.",
+    );
   });
 
   it("celebrates nothing but states it plainly when the plan becomes on time", () => {
     const before = run([t("A", "A", 10), t("B", "B", 10)], 15);
     const after = run([t("A", "A", 5), t("B", "B", 5)], 15);
-    expect(compareOutcomes(before, after, 15)).toBe("Finishes on day 10 instead of day 20, 10 days sooner. Now on time, 5 days to spare.");
+    expect(compareOutcomes(before, after, 15)).toBe(
+      "Finishes on day 10 instead of day 20, 10 days sooner. Now on time, 5 days to spare.",
+    );
   });
 
   it("says when a change makes things later, or makes no difference", () => {
@@ -75,20 +88,28 @@ describe("compareOutcomes", () => {
     expect(compareOutcomes(before, run([t("A", "A", 12)], 10), 10)).toBe(
       "Finishes on day 12 instead of day 5, 7 days later. Now 2 days late.",
     );
-    expect(compareOutcomes(before, run([t("A", "A", 5)], 10), 10)).toBe("No change to the end day: still day 5.");
+    expect(compareOutcomes(before, run([t("A", "A", 5)], 10), 10)).toBe(
+      "No change to the end day: still day 5.",
+    );
   });
 
   it("explains a change that creates or removes a circle", () => {
     const before = run([t("A", "A", 1), t("B", "B", 1, null, ["A"])], 5);
     const circle = run([t("A", "A", 1, null, ["B"]), t("B", "B", 1, null, ["A"])], 5);
-    expect(compareOutcomes(before, circle, 5)).toBe("Now cannot be scheduled: some tasks wait on each other in a circle.");
-    expect(compareOutcomes(circle, before, 5)).toBe("The circle is broken. Finishes on day 2. On time, 3 days to spare.");
+    expect(compareOutcomes(before, circle, 5)).toBe(
+      "Now cannot be scheduled: some tasks wait on each other in a circle.",
+    );
+    expect(compareOutcomes(circle, before, 5)).toBe(
+      "The circle is broken. Finishes on day 2. On time, 3 days to spare.",
+    );
   });
 
   it("leaves lateness out when there is no deadline", () => {
     const before = run([t("A", "A", 5)], 0);
     const after = run([t("A", "A", 3)], 0);
-    expect(compareOutcomes(before, after, null)).toBe("Finishes on day 3 instead of day 5, 2 days sooner.");
+    expect(compareOutcomes(before, after, null)).toBe(
+      "Finishes on day 3 instead of day 5, 2 days sooner.",
+    );
   });
 });
 
@@ -111,7 +132,13 @@ describe("saving corrections", () => {
 
   it("restores corrections saved for the same review", () => {
     const store = storage();
-    saveCorrections(store, "lantern", "2026-11-20T10:00:00Z", original, new Date("2026-11-20T14:05:00Z"));
+    saveCorrections(
+      store,
+      "lantern",
+      "2026-11-20T10:00:00Z",
+      original,
+      new Date("2026-11-20T14:05:00Z"),
+    );
     expect(loadCorrections(store, "lantern", "2026-11-20T10:00:00Z")).toEqual({
       ...original,
       savedAt: "2026-11-20T14:05:00.000Z",

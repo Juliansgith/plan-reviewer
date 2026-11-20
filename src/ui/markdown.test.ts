@@ -2,10 +2,13 @@ import { describe, expect, it } from "vitest";
 import { parsePlan, segment, type Block, type Inline } from "./markdown";
 
 const text = (inlines: Inline[]): string =>
-  inlines.map((node) => ("children" in node ? text(node.children) : "value" in node ? node.value : "")).join("");
+  inlines
+    .map((node) => ("children" in node ? text(node.children) : "value" in node ? node.value : ""))
+    .join("");
 
 describe("parsePlan", () => {
-  const source = "# Title\n\nSome **bold** text,\nover two lines.\n\n| Task | Who |\n|---|---|\n| Book hall | Ann |\n\n- one\n- two\n";
+  const source =
+    "# Title\n\nSome **bold** text,\nover two lines.\n\n| Task | Who |\n|---|---|\n| Book hall | Ann |\n\n- one\n- two\n";
   const blocks = parsePlan(source);
 
   it("keeps headings, paragraphs, tables and lists", () => {
@@ -22,7 +25,8 @@ describe("parsePlan", () => {
     for (const block of blocks) {
       if (block.type === "heading" || block.type === "paragraph") visit(block.children);
       if (block.type === "table") block.rows.flat().forEach(visit);
-      if (block.type === "list") block.items.flat().forEach((b: Block) => b.type === "paragraph" && visit(b.children));
+      if (block.type === "list")
+        block.items.flat().forEach((b: Block) => b.type === "paragraph" && visit(b.children));
     }
   });
 
@@ -60,6 +64,8 @@ describe("segment", () => {
   });
 
   it("returns the whole text when nothing overlaps", () => {
-    expect(segment("abc", 0, [{ id: "x", start: 10, end: 12 }])).toEqual([{ text: "abc", ids: [] }]);
+    expect(segment("abc", 0, [{ id: "x", start: 10, end: 12 }])).toEqual([
+      { text: "abc", ids: [] },
+    ]);
   });
 });
