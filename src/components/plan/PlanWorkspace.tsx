@@ -19,21 +19,18 @@ import {
   clearCorrections,
   compareOutcomes,
   correctionsKey,
-  describeChange,
   diffCorrections,
   parseCorrections,
   saveCorrections,
   type Draft,
 } from "@/ui/corrections";
 import { draftStorage, useStoredValue } from "@/ui/draft-store";
-import { formatStamp } from "@/ui/format";
 import type { Highlight } from "@/ui/markdown";
 import { describeVerdict } from "@/ui/verdict";
-import { Icon } from "../Icon";
+import { CorrectionsPanel } from "./CorrectionsPanel";
 import { FindingList } from "./FindingList";
 import { PlanDocument } from "./PlanDocument";
-import { TaskTable } from "./TaskTable";
-import { Timeline } from "./Timeline";
+import { ScheduleSection } from "./ScheduleSection";
 import { VerdictPanel } from "./VerdictPanel";
 import styles from "./plan.module.css";
 
@@ -195,8 +192,6 @@ export function PlanWorkspace({ view }: { view: PlanView }) {
     }
   };
 
-  const cycleIds = new Set(schedule.status === "cycle" ? schedule.cycle_groups.flat() : []);
-
   return (
     <div className={styles.workspace}>
       <div className={styles.main}>
@@ -211,38 +206,18 @@ export function PlanWorkspace({ view }: { view: PlanView }) {
         />
 
         {corrected && (
-          <section aria-label="Your corrections" className={`${styles.card} ${styles.changes}`}>
-            <div className={styles.sectionHead}>
-              <h2 className={styles.label}>Your corrections</h2>
-              {saved && (
-                <span className={styles.sectionMeta}>
-                  Saved in this browser, {formatStamp(saved.savedAt)}
-                </span>
-              )}
-            </div>
-            {pending && <p className={styles.muted}>Working out the new schedule…</p>}
-            {draftSchedule && !problems.length && (
-              <p className={styles.outcome}>
-                {compareOutcomes(view.schedule!, draftSchedule, current.deadline_day)}
-              </p>
-            )}
-            {problems.length > 0 && (
-              <ul className={styles.problems}>
-                {problems.map((problem) => (
-                  <li key={problem}>{problem}</li>
-                ))}
-              </ul>
-            )}
-            <ul className={styles.changeList}>
-              {changes.map((change, i) => (
-                <li key={i}>{describeChange(change)}</li>
-              ))}
-            </ul>
-            <button type="button" className={styles.quiet} onClick={discard}>
-              <Icon name="undo" />
-              Discard corrections
-            </button>
-          </section>
+          <CorrectionsPanel
+            changes={changes}
+            savedAt={saved?.savedAt ?? null}
+            pending={pending}
+            outcome={
+              draftSchedule
+                ? compareOutcomes(view.schedule!, draftSchedule, current.deadline_day)
+                : null
+            }
+            problems={problems}
+            onDiscard={discard}
+          />
         )}
 
         <FindingList
@@ -256,64 +231,16 @@ export function PlanWorkspace({ view }: { view: PlanView }) {
           replyText={replyText}
         />
 
-        <section aria-label="Schedule" className={styles.section}>
-          <div className={styles.sectionHead}>
-            <h2 className={styles.label}>Schedule</h2>
-            <div className={styles.headActions}>
-              {editing && (
-                <label className={styles.deadlineEdit}>
-                  Deadline day
-                  <input
-                    type="number"
-                    min={0}
-                    className={styles.input}
-                    value={current.deadline_day ?? ""}
-                    placeholder="none"
-                    onChange={(e) => {
-                      const value = e.target.value === "" ? null : Number(e.target.value);
-                      if (value === null || (Number.isInteger(value) && value >= 0)) {
-                        save({ tasks: current.tasks, deadline_day: value });
-                      }
-                    }}
-                  />
-                </label>
-              )}
-              <button
-                type="button"
-                className={editing ? styles.quiet : styles.action}
-                aria-pressed={editing}
-                onClick={() => setEditing(!editing)}
-              >
-                <Icon name="edit" />
-                {editing ? "Done correcting" : "Correct the review"}
-              </button>
-            </div>
-          </div>
-          {schedule.status === "scheduled" ? (
-            <Timeline
-              schedule={schedule}
-              tasks={current.tasks}
-              deadline={current.deadline_day}
-              active={active}
-              onSelect={showInPlan}
-            />
-          ) : (
-            <p className={styles.blocked}>
-              No schedule: some tasks wait on each other in a circle. They are marked in the table.
-              Correct one of them to see a schedule.
-            </p>
-          )}
-          <TaskTable
-            tasks={current.tasks}
-            schedule={schedule}
-            editing={editing}
-            active={active}
-            cycleIds={cycleIds}
-            hasQuote={(id) => !!view.quotes.tasks[id]}
-            onSelect={showInPlan}
-            onChange={(tasks) => save({ deadline_day: current.deadline_day, tasks })}
-          />
-        </section>
+        <ScheduleSection
+          draft={current}
+          schedule={schedule}
+          editing={editing}
+          active={active}
+          hasQuote={(id) => !!view.quotes.tasks[id]}
+          onToggleEditing={() => setEditing(!editing)}
+          onSelect={showInPlan}
+          onChange={save}
+        />
       </div>
 
       {/* Scrolls on its own on wide screens, so it must take keyboard focus. */}
