@@ -105,6 +105,16 @@ describe("scheduleTasks: schedules", () => {
     expect(result.critical_path).toHaveLength(4);
   });
 
+  it("names the person when their workload and a chain give the same bound", () => {
+    // Ann's two tasks are also a chain of 7 days. Both bounds say 7; the
+    // person is the more useful explanation (work can be handed to someone).
+    const result = scheduled({
+      tasks: [t("A", 3, [], "Ann"), t("B", 4, ["A"], "Ann"), t("C", 2, [], "Bob")],
+      deadline_day: 6,
+    });
+    expect(result.proof.bound).toMatchObject({ kind: "owner_workload", owner: "Ann", work_days: 7 });
+  });
+
   it("does better than greedy longest-chain-first on a case where that rule fails", () => {
     // Ann can do A (5 days) or B (1 day) first. B unblocks Bob's 6-day task,
     // so B must go first: B 0-1, A 1-6, C 1-7 ends on day 7. Starting with

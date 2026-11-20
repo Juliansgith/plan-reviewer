@@ -86,7 +86,13 @@ export function ownerBound(
   byOwnerAndTail: readonly number[][],
   include: (task: number) => boolean = () => true,
 ): OwnerBound | null {
-  let best: { value: number; machine: number; threshold: number; position: number } | null = null;
+  let best: {
+    value: number;
+    machine: number;
+    threshold: number;
+    position: number;
+    size: number;
+  } | null = null;
   const members: number[] = [];
 
   byOwnerAndTail.forEach((sorted, machine) => {
@@ -96,12 +102,17 @@ export function ownerBound(
     const thresholds = [...new Set(members.map((task) => heads[task]!))];
     for (const threshold of thresholds) {
       let work = 0;
+      let size = 0;
       for (let position = 0; position < members.length; position++) {
         const task = members[position]!;
         if (heads[task]! < threshold) continue;
         work += graph.duration[task]!;
+        size++;
         const value = threshold + work + tails[task]!;
-        if (!best || value > best.value) best = { value, machine, threshold, position };
+        // On equal values keep the larger set: it explains more of the work.
+        if (!best || value > best.value || (value === best.value && size > best.size)) {
+          best = { value, machine, threshold, position, size };
+        }
       }
     }
   });

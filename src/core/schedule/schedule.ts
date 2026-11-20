@@ -12,7 +12,9 @@ export const DEFAULT_NODE_LIMIT = 5_000_000;
 
 function boundReason(graph: Graph, solution: Solution): BoundReason {
   const { owner, chain } = solution;
-  if (owner && owner.value > chain.value) {
+  // On a tie, name the person when the bound involves several of their
+  // tasks: "Ann has 7 days of work" says what to change (hand work over).
+  if (owner && (owner.value > chain.value || (owner.value === chain.value && owner.members.length > 1))) {
     return {
       kind: "owner_workload",
       owner: graph.owners[owner.machine]!,
