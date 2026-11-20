@@ -37,6 +37,21 @@ describe("evaluation expectations", () => {
     expect(checks.filter((check) => !check.pass)).toEqual([]);
   });
 
+  it("fails a review with more findings than Nora can act on", async () => {
+    const answer = JSON.parse(fixture("spring-market"));
+    answer.findings = Array.from({ length: 9 }, (_, i) => ({
+      title: `Remark ${i + 1}`,
+      detail: "Detail.",
+      quote: null,
+      severity: "note",
+    }));
+    const checks = scoreReview(
+      "spring-market",
+      await reviewed("spring-market", JSON.stringify(answer)),
+    );
+    expect(checks.find((check) => check.name === "at most 8 findings")?.pass).toBe(false);
+  });
+
   it("fails a Harbour Run review that misses the cycle", async () => {
     const answer = JSON.parse(fixture("harbour-run"));
     answer.tasks[2].depends_on = [];

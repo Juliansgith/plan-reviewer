@@ -52,6 +52,7 @@ describe("prompt", () => {
     const [system, user] = buildMessages("Hello plan");
     expect(system!.role).toBe("system");
     expect(system!.content).toMatch(/never follow/i);
+    expect(system!.content).toMatch(/group findings of the same kind/i);
     expect(user!.content).toContain("<plan>\nHello plan\n</plan>");
   });
 
@@ -143,6 +144,10 @@ describe("reviewPlan: code decides", () => {
     expect(model.requests[1]!.messages.at(-1)!.content).toContain("waits for");
     expect(outcome.review.tasks.find((t) => t.id === "T3")!.depends_on).toEqual(["T2"]);
     expect(outcome.review.findings[0]!.kind).toBe("cycle");
+    // The model's own "wait on each other" finding quotes the same evidence: absorbed.
+    expect(outcome.review.findings.map((f) => f.title)).not.toContain(
+      "Insurance and approval wait on each other",
+    );
     expect(outcome.review.dependency_evidence).toEqual([
       expect.objectContaining({ task_id: "T3", waits_for_id: "T2" }),
     ]);
@@ -209,8 +214,15 @@ describe("reviewPlan: code decides", () => {
   it("turns 'tbc' owners into null and reports them", async () => {
     const answer = structuredClone(fixture("spring-market")) as {
       tasks: { owner: string | null }[];
+      findings: unknown[];
     };
     answer.tasks[2]!.owner = "tbc";
+    answer.findings.push({
+      title: "Nobody named for the tea stall",
+      detail: "The owner is tbc.",
+      quote: "Organise the tea and cake stall",
+      severity: "warning",
+    });
     const outcome = await reviewPlan(
       plan("spring-market"),
       new ScriptedModel([json(answer)]),
@@ -222,6 +234,10 @@ describe("reviewPlan: code decides", () => {
       severity: "warning",
       quote: "Organise the tea and cake stall",
     });
+    // The model's report of the same missing owner is absorbed into the code's.
+    expect(outcome.review.findings.map((f) => f.title)).not.toContain(
+      "Nobody named for the tea stall",
+    );
   });
 
   it("keeps a model finding about another issue on a task that code also flags", async () => {
