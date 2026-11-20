@@ -316,7 +316,12 @@ export function PlanWorkspace({ view }: { view: PlanView }) {
         </section>
       </div>
 
-      <aside className={styles.side}>
+      {/* Scrolls on its own on wide screens, so it must take keyboard focus. */}
+      <aside
+        className={styles.side}
+        tabIndex={0}
+        aria-label="The plan, with quoted passages marked"
+      >
         <section aria-label="The plan" className={`${styles.card} ${styles.planCard}`}>
           <h2 className={styles.label}>The plan</h2>
           <p className={styles.sectionMeta}>

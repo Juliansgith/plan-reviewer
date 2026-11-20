@@ -1,0 +1,124 @@
+import AxeBuilder from "@axe-core/playwright";
+import { expect, test } from "@playwright/test";
+
+test.describe("plan list", () => {
+  test("shows every plan with a verdict, and every plan page loads", async ({ page }) => {
+    await page.goto("/");
+    await expect(page.getByRole("heading", { name: "Event plans" })).toBeVisible();
+    await expect(page.getByText("1 day late")).toBeVisible();
+    await expect(page.getByText("Blocked: tasks wait on each other")).toBeVisible();
+    await expect(page.getByText("Review failed its checks")).toBeVisible();
+
+    const links = await page.getByRole("link", { name: /Pellerby/ }).all();
+    expect(links.length).toBe(4);
+    for (const href of await Promise.all(links.map((link) => link.getAttribute("href")))) {
+      const response = await page.goto(href!);
+      expect(response?.status(), href!).toBe(200);
+      await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
+    }
+  });
+
+  test("answers an unknown plan with a friendly 404", async ({ page }) => {
+    const response = await page.goto("/plans/no-such-plan");
+    expect(response?.status()).toBe(404);
+    await expect(page.getByRole("heading", { name: "Plan not found" })).toBeVisible();
+  });
+});
+
+test.describe("plan page", () => {
+  test("leads with the verdict and links each remark to the plan", async ({ page }) => {
+    await page.goto("/plans/test-fair");
+    const verdict = page.getByRole("region", { name: "Verdict" });
+    await expect(verdict.getByRole("heading", { name: "1 day late" })).toBeVisible();
+    await expect(verdict).toContainText("Ann has 7 days of work");
+
+    const remarks = page.getByRole("region", { name: "What is wrong" });
+    await remarks.getByRole("button", { name: "Show in plan" }).first().click();
+    const active = page.locator('mark[data-active="true"]');
+    await expect(active).toHaveText("Everything must be done by day 6.");
+    await expect(active).toBeInViewport();
+  });
+
+  test("lets Nora correct the review, keeps it across a reload, and discards it", async ({
+    page,
+  }) => {
+    await page.goto("/plans/test-fair");
+    await page.getByRole("button", { name: "Correct the review" }).click();
+    await page.getByRole("spinbutton", { name: "Days for Print posters" }).fill("2");
+
+    const corrections = page.getByRole("region", { name: "Your corrections" });
+    await expect(corrections).toContainText(
+      "Finishes on day 5 instead of day 7, 2 days sooner. Now on time, 1 day to spare.",
+    );
+    await expect(page.getByRole("region", { name: "Verdict" }).getByRole("heading")).toHaveText(
+      "On time, 1 day to spare",
+    );
+
+    await page.reload();
+    await expect(corrections).toContainText("Print posters: 4 → 2 days");
+    await corrections.getByRole("button", { name: "Discard corrections" }).click();
+    await expect(page.getByRole("region", { name: "Verdict" }).getByRole("heading")).toHaveText(
+      "1 day late",
+    );
+  });
+
+  test("explains a plan that cannot be scheduled", async ({ page }) => {
+    await page.goto("/plans/harbour-run");
+    const verdict = page.getByRole("region", { name: "Verdict" });
+    await expect(verdict.getByRole("heading")).toHaveText("Cannot be scheduled");
+    await expect(verdict).toContainText("Take out the event insurance");
+    await expect(page.getByText("The plan gives different deadlines")).toBeVisible();
+    await expect(page.getByText("The plan tries to direct the review")).toBeVisible();
+  });
+
+  test("refuses to show a review that fails its checks, and says why", async ({ page }) => {
+    await page.goto("/plans/lantern-festival");
+    await expect(
+      page.getByRole("heading", { name: "The stored review failed its checks" }),
+    ).toBeVisible();
+    await expect(page.getByText(/is not in the plan/)).toBeVisible();
+    await expect(page.getByRole("region", { name: "Verdict" })).toHaveCount(0);
+  });
+});
+
+test.describe("accessibility", () => {
+  for (const path of ["/", "/plans/test-fair", "/plans/harbour-run", "/plans/lantern-festival"]) {
+    test(`${path} has no WCAG A or AA violations`, async ({ page }) => {
+      await page.goto(path);
+      const results = await new AxeBuilder({ page })
+        .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"])
+        .analyze();
+      expect(
+        results.violations.map(
+          (v) =>
+            `${v.id}: ${v.help} — ${v.nodes
+              .slice(0, 4)
+              .map((n) => n.target.join(" "))
+              .join(", ")}`,
+        ),
+      ).toEqual([]);
+    });
+  }
+});
+
+test.describe("API", () => {
+  test("answers the contract's example request", async ({ request }) => {
+    const response = await request.post("/api/schedule", {
+      data: {
+        tasks: [
+          { id: "A", name: "Book the hall", owner: "Ann", duration_days: 3, depends_on: [] },
+          { id: "B", name: "Sign the contract", owner: "Ann", duration_days: 2, depends_on: ["A"] },
+          { id: "C", name: "Design the poster", owner: "Ann", duration_days: 4, depends_on: [] },
+          { id: "D", name: "Print the poster", owner: "Bob", duration_days: 2, depends_on: ["C"] },
+        ],
+        deadline_day: 10,
+      },
+    });
+    expect(response.status()).toBe(200);
+    expect(await response.json()).toMatchObject({
+      status: "scheduled",
+      end_day: 9,
+      meets_deadline: true,
+    });
+  });
+});

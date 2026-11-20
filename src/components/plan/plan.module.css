@@ -49,7 +49,7 @@
   font-weight: 600;
   letter-spacing: 0.06em;
   text-transform: uppercase;
-  color: rgb(98 89 80 / 70%);
+  color: var(--color-text-muted);
 }
 
 .sectionHead {
@@ -198,7 +198,7 @@
 }
 
 .problems {
-  color: var(--color-attention);
+  color: var(--color-attention-text);
 }
 
 /* Findings */
@@ -276,7 +276,7 @@ details > .groupTitle {
 .findingMeta {
   margin: 8px 0 0;
   font-size: var(--text-11);
-  color: rgb(98 89 80 / 70%);
+  color: var(--color-text-muted);
 }
 
 .reply {
@@ -346,7 +346,7 @@ details > .groupTitle {
   position: absolute;
   transform: translateX(-50%);
   font-size: var(--text-11);
-  color: rgb(98 89 80 / 70%);
+  color: var(--color-text-muted);
 }
 
 .bar {
@@ -430,7 +430,7 @@ details > .groupTitle {
   padding: 10px 12px;
   border-radius: var(--radius-card);
   background: var(--color-attention-tint);
-  color: var(--color-attention);
+  color: var(--color-attention-text);
   font-weight: 500;
 }
 

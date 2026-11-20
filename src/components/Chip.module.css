@@ -17,7 +17,7 @@
 
 .bad {
   background: var(--color-attention-tint);
-  color: var(--color-attention);
+  color: var(--color-attention-text);
 }
 
 .neutral {

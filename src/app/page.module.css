@@ -70,7 +70,7 @@
   font-weight: 600;
   letter-spacing: 0.06em;
   text-transform: uppercase;
-  color: rgb(98 89 80 / 70%);
+  color: var(--color-text-muted);
 }
 
 .document {

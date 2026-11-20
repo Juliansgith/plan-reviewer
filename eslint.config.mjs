@@ -16,7 +16,7 @@ export default defineConfig([
   },
   {
     // Command-line tools and scripts talk to the terminal on purpose.
-    files: ["src/cli/**", "scripts/**"],
+    files: ["src/cli/**", "scripts/**", "e2e/make-data.ts"],
     rules: { "no-console": "off" },
   },
   globalIgnores([

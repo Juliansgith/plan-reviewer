@@ -14,6 +14,9 @@
   --color-lime: #cdeb9b;
   --color-callout: #f3ffdb;
   --color-attention: #cb593b;
+  /* Terracotta darkened just enough for small text to reach WCAG AA (4.9:1 on
+     its tint). The brand value stays for borders, lines and large headings. */
+  --color-attention-text: #b04a2e;
   --color-attention-tint: rgb(203 89 59 / 8%);
   --color-highlight: rgb(205 235 155 / 70%);
   --color-highlight-active: #cdeb9b;
