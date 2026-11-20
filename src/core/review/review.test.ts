@@ -62,7 +62,15 @@ describe("prompt", () => {
     };
     expect(REVIEW_JSON_SCHEMA.strict).toBe(true);
     expect(schema.additionalProperties).toBe(false);
-    expect(schema.required).toEqual(["deadline_day", "deadline_quote", "tasks", "findings"]);
+    // The model lists every "X waits for Y" statement first: measured on
+    // Harbour Run, this found the circle in 4 of 4 runs instead of 2 of 4.
+    expect(schema.required).toEqual([
+      "dependency_statements",
+      "deadline_day",
+      "deadline_quote",
+      "tasks",
+      "findings",
+    ]);
   });
 });
 
@@ -113,6 +121,31 @@ describe("reviewPlan: code decides", () => {
     const cycle = review.findings[0]!;
     expect(cycle.detail).toContain("Get the course approved by the council");
     expect(cycle.detail).toContain("Take out the event insurance");
+  });
+
+  it("adds a stated dependency the model left out of its task list, and finds the circle", async () => {
+    const answer = structuredClone(fixture("harbour-run")) as {
+      tasks: { id: string; depends_on: string[] }[];
+      dependency_statements?: unknown[];
+    };
+    answer.tasks.find((t) => t.id === "T3")!.depends_on = [];
+    answer.dependency_statements = [
+      {
+        quote:
+          "Kerry will take out the event insurance once the council has approved the course, because the insurers want a copy of the approved course map before they will cover us.",
+        task: "Take out the event insurance",
+        waits_for: "Get the course approved by the council",
+      },
+    ];
+    const model = new ScriptedModel([json(answer), json(answer), json(answer)]);
+    const outcome = await reviewPlan(plan("harbour-run"), model, options);
+    if (!outcome.ok) throw new Error(outcome.errors.join("; "));
+    expect(model.requests[1]!.messages.at(-1)!.content).toContain("waits for");
+    expect(outcome.review.tasks.find((t) => t.id === "T3")!.depends_on).toEqual(["T2"]);
+    expect(outcome.review.findings[0]!.kind).toBe("cycle");
+    expect(outcome.review.dependency_evidence).toEqual([
+      expect.objectContaining({ task_id: "T3", waits_for_id: "T2" }),
+    ]);
   });
 
   it("ignores a deadline taken from the planted instruction, even when the model obeys it", async () => {
