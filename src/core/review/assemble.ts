@@ -124,7 +124,9 @@ export function assembleReview(
       severity: "blocker",
       source: "code",
       kind: "cycle",
-      covers: cycle.map((id) => spanOf(quoteOf.get(id)!)).filter((s): s is Span => s !== null),
+      // A circle is about the dependencies, not the task wording, so model
+      // findings that quote these tasks are about something else: keep them.
+      covers: [],
     };
   });
   codeFindings.unshift(...cycleFindings);
@@ -182,7 +184,8 @@ export function assembleReview(
       severity: "warning",
       source: "code",
       kind: "no_owner",
-      covers: [spanOf(task.quote)].filter((s): s is Span => s !== null),
+      // The model may quote the same task about another issue: keep that.
+      covers: [],
     });
   }
   const owners = [

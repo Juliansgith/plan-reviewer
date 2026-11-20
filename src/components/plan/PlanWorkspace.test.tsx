@@ -23,15 +23,57 @@ const REVIEW = {
   deadline_day: 6,
   deadline_quote: "Everything must be done by day 6.",
   tasks: [
-    { id: "T1", name: "Book the hall", owner: "Ann", duration_days: 3, depends_on: [], quote: "Book the hall" },
-    { id: "T2", name: "Print posters", owner: "Ann", duration_days: 4, depends_on: ["T1"], quote: "Print posters" },
-    { id: "T3", name: "Find stewards", owner: "Bob", duration_days: 2, depends_on: [], quote: "Find stewards" },
+    {
+      id: "T1",
+      name: "Book the hall",
+      owner: "Ann",
+      duration_days: 3,
+      depends_on: [],
+      quote: "Book the hall",
+    },
+    {
+      id: "T2",
+      name: "Print posters",
+      owner: "Ann",
+      duration_days: 4,
+      depends_on: ["T1"],
+      quote: "Print posters",
+    },
+    {
+      id: "T3",
+      name: "Find stewards",
+      owner: "Bob",
+      duration_days: 2,
+      depends_on: [],
+      quote: "Find stewards",
+    },
   ],
   findings: [
-    { title: "Too few stewards", detail: "Two days may not be enough.", quote: "Find stewards", severity: "warning", source: "model", kind: "model" },
-    { title: "A small note", detail: "Minor.", quote: null, severity: "note", source: "model", kind: "model" },
+    {
+      title: "Too few stewards",
+      detail: "Two days may not be enough.",
+      quote: "Find stewards",
+      severity: "warning",
+      source: "model",
+      kind: "model",
+    },
+    {
+      title: "A small note",
+      detail: "Minor.",
+      quote: null,
+      severity: "note",
+      source: "model",
+      kind: "model",
+    },
   ],
-  meta: { model: "test", attempts: 1, prompt_tokens: 1, completion_tokens: 1, cost_usd: null, generated_at: "2026-11-20T10:00:00.000Z" },
+  meta: {
+    model: "test",
+    attempts: 1,
+    prompt_tokens: 1,
+    completion_tokens: 1,
+    cost_usd: null,
+    generated_at: "2026-11-20T10:00:00.000Z",
+  },
 };
 
 let dir: string;
@@ -62,7 +104,9 @@ describe("PlanWorkspace", () => {
     render(<PlanWorkspace view={view} />);
     const verdict = screen.getByRole("region", { name: "Verdict" });
     expect(within(verdict).getByRole("heading", { name: "1 day late" })).toBeInTheDocument();
-    expect(within(verdict).getByText("Ann has 7 days of work and can only do one task at a time.")).toBeInTheDocument();
+    expect(
+      within(verdict).getByText("Ann has 7 days of work and can only do one task at a time."),
+    ).toBeInTheDocument();
   });
 
   it("shows where a remark comes from in the plan", async () => {
@@ -82,17 +126,29 @@ describe("PlanWorkspace", () => {
     const days = screen.getByRole("spinbutton", { name: "Days for Print posters" });
     await user.clear(days);
     await user.type(days, "2");
-    expect(await screen.findByText("Finishes on day 5 instead of day 7, 2 days sooner. Now on time, 1 day to spare.")).toBeInTheDocument();
+    expect(
+      await screen.findByText(
+        "Finishes on day 5 instead of day 7, 2 days sooner. Now on time, 1 day to spare.",
+      ),
+    ).toBeInTheDocument();
     expect(screen.getByText("Print posters: 4 → 2 days")).toBeInTheDocument();
-    expect(requests.at(-1)).toMatchObject({ deadline_day: 6, tasks: expect.arrayContaining([expect.objectContaining({ id: "T2", duration_days: 2 })]) });
-    expect(within(screen.getByRole("region", { name: "Verdict" })).getByRole("heading", { name: "On time, 1 day to spare" })).toBeInTheDocument();
+    expect(requests.at(-1)).toMatchObject({
+      deadline_day: 6,
+      tasks: expect.arrayContaining([expect.objectContaining({ id: "T2", duration_days: 2 })]),
+    });
+    expect(
+      within(screen.getByRole("region", { name: "Verdict" })).getByRole("heading", {
+        name: "On time, 1 day to spare",
+      }),
+    ).toBeInTheDocument();
   });
 
   it("keeps corrections after a reload and can discard them", async () => {
     const user = userEvent.setup();
     const { unmount } = render(<PlanWorkspace view={view} />);
     await user.click(screen.getByRole("button", { name: "Correct the review" }));
-    const owner = screen.getByRole("textbox", { name: "Owner of Print posters" });
+    // A text input that suggests existing names from a datalist is a combobox.
+    const owner = screen.getByRole("combobox", { name: "Owner of Print posters" });
     await user.clear(owner);
     await user.type(owner, "Cat");
     await screen.findByText("Print posters: owner Ann → Cat");
@@ -102,7 +158,11 @@ describe("PlanWorkspace", () => {
     expect(await screen.findByText("Print posters: owner Ann → Cat")).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "Discard corrections" }));
     expect(screen.queryByText("Print posters: owner Ann → Cat")).not.toBeInTheDocument();
-    expect(within(screen.getByRole("region", { name: "Verdict" })).getByRole("heading", { name: "1 day late" })).toBeInTheDocument();
+    expect(
+      within(screen.getByRole("region", { name: "Verdict" })).getByRole("heading", {
+        name: "1 day late",
+      }),
+    ).toBeInTheDocument();
   });
 
   it("copies a reply for the committee that quotes their plan", async () => {

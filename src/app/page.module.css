@@ -1,0 +1,87 @@
+.page {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 28px 24px 64px;
+}
+
+.narrow {
+  max-width: 820px;
+}
+
+.crumbs {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin: 0 0 10px;
+  font-size: var(--text-11);
+  color: var(--color-text-muted);
+}
+
+.crumbs a {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  color: var(--color-text-muted);
+  text-decoration: none;
+}
+
+.crumbs a:hover {
+  color: var(--color-deep-green);
+}
+
+.meta {
+  margin: 6px 0 20px;
+  font-size: var(--text-12);
+  color: var(--color-text-muted);
+}
+
+.problem {
+  margin-bottom: 20px;
+  padding: 18px 20px;
+  background: var(--color-background);
+  border: 1px solid var(--color-border-half);
+  border-left: 4px solid var(--color-attention);
+  border-radius: 12px;
+}
+
+.problem.neutral {
+  border-left-color: var(--color-border);
+}
+
+.problem h2 {
+  margin: 4px 0 8px;
+}
+
+.problem ul {
+  margin: 8px 0;
+  padding-left: 18px;
+}
+
+.problem code {
+  font-size: var(--text-11);
+  background: var(--color-surface);
+  padding: 1px 4px;
+  border-radius: 4px;
+}
+
+.label {
+  margin: 0;
+  font-size: var(--text-11);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: rgb(98 89 80 / 70%);
+}
+
+.document {
+  padding: 18px 20px;
+  background: var(--color-background);
+  border: 1px solid var(--color-border-half);
+  border-radius: 12px;
+}
+
+@media (max-width: 560px) {
+  .page {
+    padding: 20px 16px 48px;
+  }
+}

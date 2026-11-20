@@ -112,7 +112,11 @@ describe("scheduleTasks: schedules", () => {
       tasks: [t("A", 3, [], "Ann"), t("B", 4, ["A"], "Ann"), t("C", 2, [], "Bob")],
       deadline_day: 6,
     });
-    expect(result.proof.bound).toMatchObject({ kind: "owner_workload", owner: "Ann", work_days: 7 });
+    expect(result.proof.bound).toMatchObject({
+      kind: "owner_workload",
+      owner: "Ann",
+      work_days: 7,
+    });
   });
 
   it("does better than greedy longest-chain-first on a case where that rule fails", () => {

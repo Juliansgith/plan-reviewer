@@ -187,6 +187,29 @@ describe("reviewPlan: code decides", () => {
     });
   });
 
+  it("keeps a model finding about another issue on a task that code also flags", async () => {
+    const answer = structuredClone(fixture("spring-market")) as {
+      tasks: { owner: string | null }[];
+      findings: unknown[];
+    };
+    answer.tasks[2]!.owner = "tbc";
+    answer.findings.push({
+      title: "Four days is short for the tea stall",
+      detail: "Bakers need more notice.",
+      quote: "Organise the tea and cake stall",
+      severity: "note",
+    });
+    const outcome = await reviewPlan(
+      plan("spring-market"),
+      new ScriptedModel([json(answer)]),
+      options,
+    );
+    if (!outcome.ok) throw new Error(outcome.errors.join("; "));
+    const titles = outcome.review.findings.map((f) => f.title);
+    expect(titles).toContain('No owner for "Organise the tea and cake stall"');
+    expect(titles).toContain("Four days is short for the tea stall");
+  });
+
   it("warns when two owner names look like the same person", async () => {
     const answer = structuredClone(fixture("spring-market")) as {
       tasks: { owner: string | null }[];
