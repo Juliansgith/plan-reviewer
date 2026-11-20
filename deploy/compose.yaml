@@ -1,0 +1,26 @@
+# Runs the app on a shared server, reachable only from the host on
+# 127.0.0.1:8100; nginx in front adds HTTPS and rate limiting.
+#   docker compose -f deploy/compose.yaml up -d --build
+name: plan-reviewer
+
+services:
+  web:
+    build: ..
+    image: plan-reviewer:latest
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8100:8000"
+    environment:
+      PORT: "8000"
+    # Locked down as in CI: no writes, no Linux capabilities, non-root user
+    # (set in the Dockerfile), and capped so a hard schedule request cannot
+    # take CPU from the other apps on the server.
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    cpus: 2
+    mem_limit: 1g
