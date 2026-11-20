@@ -1,11 +1,6 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import {
-  MAX_TASKS,
-  parseReview,
-  parseScheduleRequest,
-  type ScheduleRequest,
-} from "./contracts";
+import { MAX_TASKS, parseReview, parseScheduleRequest, type ScheduleRequest } from "./contracts";
 
 const example = (name: string): unknown =>
   JSON.parse(readFileSync(new URL(`../../examples/${name}`, import.meta.url), "utf8"));
@@ -74,8 +69,12 @@ describe("parseScheduleRequest", () => {
     expect(parseScheduleRequest(request([task("A", { owner: "Ann" })])).ok).toBe(true);
   });
 
-  it.each([null, 1.5, "10", undefined])("refuses deadline_day %j", (deadline) => {
+  it.each([null, 1.5, "10"])("refuses deadline_day %j", (deadline) => {
     expectErrors(parseScheduleRequest(request([task("A")], deadline)), "deadline_day");
+  });
+
+  it("refuses a request without deadline_day", () => {
+    expectErrors(parseScheduleRequest({ tasks: [task("A")] }), "deadline_day");
   });
 
   it("refuses a body that is not an object, or has no task list", () => {
