@@ -1,6 +1,6 @@
 // Types for the review pipeline and the model client it talks to.
 
-import type { Review, ReviewTask } from "../contracts";
+import type { ReviewTask } from "../contracts";
 
 export type Severity = "blocker" | "warning" | "note";
 
@@ -28,8 +28,14 @@ export type ReviewFinding = {
 
 export type DeadlineStatement = { day: number; quote: string };
 
-/** What ./review writes: the contract's fields plus a few extra ones. */
-export type StoredReview = Omit<Review, "tasks" | "findings"> & {
+/**
+ * What ./review writes: the contract's fields plus a few extra ones.
+ * Spelled out rather than built with Omit<Review, ...>: Review comes from a
+ * loose zod object with an index signature, and Omit over that loses the
+ * named fields' types.
+ */
+export type StoredReview = {
+  deadline_day: number | null;
   tasks: ReviewTask[];
   findings: ReviewFinding[];
   deadline_quote: string | null;
