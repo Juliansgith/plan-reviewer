@@ -14,7 +14,10 @@ export default defineConfig({
     coverage: {
       provider: "v8",
       include: ["src/**/*.{ts,tsx}"],
-      exclude: ["src/**/*.test.{ts,tsx}", "src/test/**", "src/app/**/layout.tsx"],
+      // Pages, route files and CLI entry points are a few lines of wiring,
+      // covered by the browser tests and scripts/smoke-review.mjs instead.
+      exclude: ["src/**/*.test.{ts,tsx}", "src/test/**", "src/app/**", "src/cli/**"],
+      thresholds: { statements: 90, branches: 80, functions: 90, lines: 90 },
     },
     projects: [
       {

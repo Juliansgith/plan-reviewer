@@ -22,7 +22,7 @@
     "contract": "node scripts/contract-check.mjs",
     "review": "tsx src/cli/review.ts",
     "eval": "tsx src/cli/eval.ts",
-    "check": "npm run format:check && npm run lint && npm run typecheck && npm run test && npm run build && npm run contract"
+    "check": "npm run format:check && npm run lint && npm run typecheck && npm run test:coverage && npm run build && npm run contract"
   },
   "dependencies": {
     "@fontsource-variable/inter": "5.3.0",
