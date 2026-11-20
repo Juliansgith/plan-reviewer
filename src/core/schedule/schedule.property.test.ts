@@ -33,7 +33,13 @@ function acyclicRequest(maxTasks: number) {
         for (let i = 0; i < n; i++) {
           const depends_on: string[] = [];
           for (let j = 0; j < i; j++) if ((edges[edge++] ?? 9) < 3) depends_on.push(`T${j}`);
-          tasks.push({ id: `T${i}`, name: `Task ${i}`, owner: owners[i] ?? null, duration_days: durations[i] ?? 1, depends_on });
+          tasks.push({
+            id: `T${i}`,
+            name: `Task ${i}`,
+            owner: owners[i] ?? null,
+            duration_days: durations[i] ?? 1,
+            depends_on,
+          });
         }
         // Present the tasks in a random order so the solver cannot rely on it.
         return { tasks: order.map((i) => tasks[i]!), deadline_day: deadline };
@@ -59,7 +65,11 @@ describe("scheduler properties", () => {
         const result = scheduleTasks(request, { timeLimitMs: 200 });
         if (result.status !== "scheduled") throw new Error("expected a schedule");
         expect(result.proof.lower_bound).toBeLessThanOrEqual(result.end_day);
-        if (result.proof.optimal) expect(result.proof.lower_bound === result.end_day || result.proof.solver.method === "branch_and_bound").toBe(true);
+        if (result.proof.optimal)
+          expect(
+            result.proof.lower_bound === result.end_day ||
+              result.proof.solver.method === "branch_and_bound",
+          ).toBe(true);
       }),
       { numRuns: 300 },
     );
@@ -89,7 +99,10 @@ describe("scheduler properties", () => {
             fc.integer({ min: 0, max: request.tasks.length - 1 }),
           )
           .map(([a, b]) => {
-            const tasks = request.tasks.map((task) => ({ ...task, depends_on: [...task.depends_on] }));
+            const tasks = request.tasks.map((task) => ({
+              ...task,
+              depends_on: [...task.depends_on],
+            }));
             const first = tasks[a]!;
             const second = tasks[b]!;
             first.depends_on.push(second.id);
@@ -118,7 +131,7 @@ describe("scheduler properties", () => {
       })
       .map(({ owners: taskOwners, durations, density, seed }): ScheduleRequest => {
         let state = seed >>> 0;
-        const random = () => ((state = (state * 1664525 + 1013904223) >>> 0) / 2 ** 32);
+        const random = () => (state = (state * 1664525 + 1013904223) >>> 0) / 2 ** 32;
         const tasks: Task[] = taskOwners.map((owner, i) => ({
           id: `T${i}`,
           name: `Task ${i}`,

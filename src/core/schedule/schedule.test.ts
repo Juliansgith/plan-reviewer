@@ -5,7 +5,12 @@ import { scheduleTasks } from "./schedule";
 import type { ScheduledResult } from "./types";
 import { verifyScheduleResponse } from "./verify";
 
-const t = (id: string, duration_days: number, depends_on: string[] = [], owner: string | null = null): Task => ({
+const t = (
+  id: string,
+  duration_days: number,
+  depends_on: string[] = [],
+  owner: string | null = null,
+): Task => ({
   id,
   name: `Task ${id}`,
   owner,
@@ -26,7 +31,13 @@ describe("scheduleTasks: schedules", () => {
       readFileSync(new URL("../../../examples/schedule-request.json", import.meta.url), "utf8"),
     ) as ScheduleRequest;
     const result = scheduled(request);
-    expect(result).toMatchObject({ end_day: 9, deadline_day: 10, meets_deadline: true, days_late: 0, cycle: [] });
+    expect(result).toMatchObject({
+      end_day: 9,
+      deadline_day: 10,
+      meets_deadline: true,
+      days_late: 0,
+      cycle: [],
+    });
     expect(result.proof).toMatchObject({ lower_bound: 9, optimal: true });
   });
 
@@ -42,7 +53,10 @@ describe("scheduleTasks: schedules", () => {
   });
 
   it("makes one person do one task at a time", () => {
-    const result = scheduled({ tasks: [t("A", 3, [], "Ann"), t("B", 3, [], "Ann")], deadline_day: 10 });
+    const result = scheduled({
+      tasks: [t("A", 3, [], "Ann"), t("B", 3, [], "Ann")],
+      deadline_day: 10,
+    });
     expect(result.end_day).toBe(6);
   });
 
@@ -52,7 +66,10 @@ describe("scheduleTasks: schedules", () => {
   });
 
   it("treats different owners as different people", () => {
-    const result = scheduled({ tasks: [t("A", 3, [], "Ann"), t("B", 3, [], "Bob")], deadline_day: 10 });
+    const result = scheduled({
+      tasks: [t("A", 3, [], "Ann"), t("B", 3, [], "Bob")],
+      deadline_day: 10,
+    });
     expect(result.end_day).toBe(3);
   });
 
@@ -102,7 +119,12 @@ describe("scheduleTasks: schedules", () => {
 
   it("gives the same answer every time", () => {
     const request: ScheduleRequest = {
-      tasks: [t("A", 3, [], "Ann"), t("B", 2, ["A"], "Bob"), t("C", 4, [], "Ann"), t("D", 2, ["C"], "Bob")],
+      tasks: [
+        t("A", 3, [], "Ann"),
+        t("B", 2, ["A"], "Bob"),
+        t("C", 4, [], "Ann"),
+        t("D", 2, ["C"], "Bob"),
+      ],
       deadline_day: 10,
     };
     expect(scheduleTasks(request)).toEqual(scheduleTasks(request));
@@ -123,7 +145,9 @@ describe("scheduleTasks: schedules", () => {
   it("handles a 1,500-task chain without overflowing the stack", () => {
     // The API caps requests at 60 tasks, but the engine itself must not
     // depend on recursion depth.
-    const tasks = Array.from({ length: 1500 }, (_, i) => t(`C${i}`, 1, i === 0 ? [] : [`C${i - 1}`]));
+    const tasks = Array.from({ length: 1500 }, (_, i) =>
+      t(`C${i}`, 1, i === 0 ? [] : [`C${i - 1}`]),
+    );
     const result = scheduleTasks({ tasks, deadline_day: 10 });
     expect(result).toMatchObject({ status: "scheduled", end_day: 1500 });
   });
@@ -151,7 +175,10 @@ describe("scheduleTasks: cycles", () => {
   });
 
   it("orders the cycle so each task depends on the next", () => {
-    const request = { tasks: [t("A", 1, ["C"]), t("B", 1, ["A"]), t("C", 1, ["B"]), t("D", 1, ["A"])], deadline_day: 9 };
+    const request = {
+      tasks: [t("A", 1, ["C"]), t("B", 1, ["A"]), t("C", 1, ["B"]), t("D", 1, ["A"])],
+      deadline_day: 9,
+    };
     const result = scheduleTasks(request);
     if (result.status !== "cycle") throw new Error("expected a cycle");
     const byId = new Map(request.tasks.map((task) => [task.id, task]));

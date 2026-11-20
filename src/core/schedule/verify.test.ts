@@ -15,7 +15,9 @@ describe("verifyScheduleResponse (TypeScript port of check_contract.py)", () => 
   });
 
   it("finds an owner overlap", () => {
-    const response = structuredClone(exampleResponse) as { schedule: { id: string; start_day: number; end_day: number }[] };
+    const response = structuredClone(exampleResponse) as {
+      schedule: { id: string; start_day: number; end_day: number }[];
+    };
     // Move A (Ann, 3 days) to day 0, on top of C (Ann, days 0-4).
     response.schedule = response.schedule.map((entry) =>
       entry.id === "A" ? { ...entry, start_day: 0, end_day: 3 } : entry,
@@ -26,7 +28,9 @@ describe("verifyScheduleResponse (TypeScript port of check_contract.py)", () => 
   });
 
   it("finds a task that starts before its dependency ends", () => {
-    const response = structuredClone(exampleResponse) as { schedule: { id: string; start_day: number; end_day: number }[] };
+    const response = structuredClone(exampleResponse) as {
+      schedule: { id: string; start_day: number; end_day: number }[];
+    };
     response.schedule = response.schedule.map((entry) =>
       entry.id === "D" ? { ...entry, start_day: 3, end_day: 5 } : entry,
     );
@@ -42,9 +46,13 @@ describe("verifyScheduleResponse (TypeScript port of check_contract.py)", () => 
   });
 
   it("finds a missing task and a wrong duration", () => {
-    const response = structuredClone(exampleResponse) as { schedule: { id: string; start_day: number; end_day: number }[] };
+    const response = structuredClone(exampleResponse) as {
+      schedule: { id: string; start_day: number; end_day: number }[];
+    };
     response.schedule = response.schedule.filter((entry) => entry.id !== "B");
-    expect(verifyScheduleResponse(exampleRequest, response)).toContain("missing task B from schedule");
+    expect(verifyScheduleResponse(exampleRequest, response)).toContain(
+      "missing task B from schedule",
+    );
   });
 
   it("checks a cycle answer names ids on one circular dependency", () => {

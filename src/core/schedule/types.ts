@@ -32,9 +32,14 @@ export type ScheduleProof = {
   /** True when end_day is proven to be the smallest possible. */
   optimal: boolean;
   solver: {
+    /**
+     * bound_met_by_heuristic: a quick schedule already reached the lower bound.
+     * branch_and_bound: the exhaustive search finished, so the answer is optimal.
+     * best_found_within_limit: the search hit its limit; see lower_bound for the gap.
+     */
     method: "bound_met_by_heuristic" | "branch_and_bound" | "best_found_within_limit";
+    /** Search nodes visited. No timings here, so equal requests get equal answers. */
     nodes: number;
-    elapsed_ms: number;
   };
 };
 
