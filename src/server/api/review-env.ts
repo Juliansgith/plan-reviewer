@@ -3,10 +3,8 @@
 //                            mounted secret, so the key is not in the
 //                            process environment), or
 //   OPENROUTER_API_KEY       the key itself
-//   REVIEW_API_TOKEN_SHA256  SHA-256 of the bearer token, in hex; the token
-//                            itself never reaches the server
 //   REVIEW_MODEL             optional; default as for ./review
-// Without a key and a token hash the endpoint stays off.
+// Without a key the endpoint stays off.
 
 import { readFileSync } from "node:fs";
 import { DEFAULT_MODEL, OpenRouterClient } from "../openrouter";
@@ -33,7 +31,6 @@ export function reviewEndpointFromEnv(
 ): ReviewEndpoint {
   const apiKey = modelKey(env, readFile);
   return {
-    tokenSha256: env.REVIEW_API_TOKEN_SHA256?.trim().toLowerCase() || null,
     client: apiKey
       ? new OpenRouterClient({ apiKey, baseUrl: env.OPENROUTER_BASE_URL?.trim() || undefined })
       : null,

@@ -77,7 +77,7 @@ Nora's corrections are sent to `POST /api/schedule`, the endpoint the graders te
 
 ## D12. No live model calls from the public page
 
-Reviews are made offline with `./review` and stored. A public page that calls a paid model on demand invites cost abuse and needs rate limiting and accounts, and every result would need the same verification anyway. The page's AI is the verified review; the corrections loop is deterministic and instant. The page still makes no model calls; D20 adds a token-protected endpoint for `./review` only.
+Reviews are made offline with `./review` and stored. A public page that calls a paid model on demand invites cost abuse and needs rate limiting and accounts, and every result would need the same verification anyway. The page's AI is the verified review; the corrections loop is deterministic and instant. The page still makes no model calls; D20 adds a review endpoint for `./review` only.
 
 ## D13. Readable and plain beats quiet and on-brand
 
@@ -101,7 +101,7 @@ The Docker image runs Next.js's standalone server as the `node` user on a digest
 
 ## D17. The deployed page is behind a password; the contract API is not
 
-The deployed page and the plan data need a password (nginx basic auth, over HTTPS; the password is shared outside the repository). `POST /api/schedule` and `GET /api/health` stay open, because the graders' `check_contract.py` posts to the endpoint without a password. `POST /api/review` is outside the password too, behind its own token (D20). The open endpoint only schedules what it is sent, is rate-limited per client (50 a second, bursts of 200: far above a test script, enough to stop a flood) and runs in a container capped at 2 CPUs.
+The deployed page and the plan data need a password (nginx basic auth, over HTTPS; the password is shared outside the repository). `POST /api/schedule` and `GET /api/health` stay open, because the graders' `check_contract.py` posts to the endpoint without a password. `POST /api/review` is outside the password too, so `./review` needs no setting; it is capped instead (D20). The open endpoint only schedules what it is sent, is rate-limited per client (50 a second, bursts of 200: far above a test script, enough to stop a flood) and runs in a container capped at 2 CPUs.
 
 ## D18. Deployed on a shared server behind nginx
 
@@ -118,18 +118,19 @@ Nora could not tell how to act on a "Must fix" remark, and expected to drag the 
 
 The timeline can be dragged, but only in the two ways the contract can express: a bar dropped on another person's row hands the task over, and dragging its end changes how many days it takes. Start days are worked out by the scheduler, so a bar cannot be dragged to a day; that would need a "not before" date the contract does not have. The task table does the same by keyboard, so nothing depends on dragging (WCAG 2.5.7).
 
-## D20. A review endpoint, so ./review runs without a key of one's own
+## D20. ./review runs on the server's model key, with nothing to set up
 
-The graders run `./review` on plans we have not seen, and the brief judges the AI part on code alone if they cannot run the model. So the server, which holds a model key, offers `POST /api/review`, and `./review` uses it when `OPENROUTER_API_KEY` is not set but `REVIEW_API_URL` and `REVIEW_API_TOKEN` are. This revises D12 for `./review` only: the page still makes no model calls.
+The graders run `./review` on plans we have not seen, and the brief judges the AI part on code alone if they cannot run the model. So `./review` needs no key, token or setting: it sends the plan to `POST /api/review` on the deployed server, which holds the model key and runs the same pipeline. This revises D12 for `./review` only: the page still makes no model calls.
 
-- The endpoint runs the same pipeline as `./review` with a fixed model, prompt, schema and limits. The caller sends one field, the plan, so a token cannot use the key for anything but plan reviews.
-- A bearer token, not the page password: a 256-bit secret made for programs, stored on the server only as its SHA-256. `/api/review` is outside nginx's password, like `/api/schedule`, so a script needs one credential.
-- At most 2 reviews at once, 30 an hour and 200 a day, plus a per-client nginx limit. The key also has a credit limit at OpenRouter.
+- The endpoint is open, like `/api/schedule`. The caller sends one field, the plan; the model, prompt, schema and limits are fixed on the server, so it can run plan reviews and nothing else. It cannot be used as a general model proxy.
+- What it can spend is capped: at most 2 reviews at once, 30 an hour and 200 a day in the app, 10 requests a minute per client in nginx, and the key's own credit limit at OpenRouter. With the default model the worst case is about $1 a day.
+- The risk accepted: anyone who finds the URL can use the day's reviews, after which `./review` answers 429 until the window frees up. A token would stop that, but every reviewer would need to be given one and set it; for a handful of graders and a cent-sized cost, no setup wins.
 - The key is a mounted secret file readable only by root and the container, not an environment variable. On the server this replaces "secrets stay in the environment" (AGENTS.md).
-- One audit line per request, without plan text, token or key.
-- `./review` trusts the server no more than the model: it checks the returned review against the contract and the plan before writing it, and sends the token only over HTTPS.
+- One audit line per request, without plan text or key.
+- `./review` trusts the server no more than the model: it checks the returned review against the contract and the plan before writing it, talks to the server only over HTTPS, and never follows a redirect.
+- `REVIEW_LOCAL=1` with `OPENROUTER_API_KEY` calls the model from the reviewer's own computer instead; `REVIEW_API_URL` points `./review` at another server.
 
-The controls, mapped to SOC 2 criteria, and how to rotate, revoke and audit, are in docs/SECURITY.md. Given up: per-reviewer tokens and a usage dashboard; one revocable token and the audit lines are enough for a handful of graders.
+The controls, mapped to SOC 2 criteria, and how to revoke and audit, are in docs/SECURITY.md.
 
 ## D16. What we cut
 

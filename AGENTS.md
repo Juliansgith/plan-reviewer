@@ -13,7 +13,7 @@ Read in this order: README.md, docs/ARCHITECTURE.md, docs/DECISIONS.md, docs/con
 - Keep files small and focused. Prefer adding a module to growing one past about 300 lines.
 - When a change conflicts with a decision in docs/DECISIONS.md, say so and propose an update to the decision; do not quietly work around it.
 - Say whether evidence came from a fake or a real run. Tests use a scripted model; only `npm run eval` and `./review` call OpenRouter, and they cost money.
-- Secrets stay out of the repository, images, logs and error messages. Locally they live in the environment (`.env`, git-ignored); on the server, in root-owned secret files outside the releases (docs/SECURITY.md). Never write an API key or token into a tracked file, a log line or an error message.
+- Secrets stay out of the repository, images, logs and error messages. Locally they live in the environment (`.env`, git-ignored); on the server, in root-owned secret files outside the releases (docs/SECURITY.md). Never write an API key into a tracked file, a log line or an error message.
 
 ## Commands
 

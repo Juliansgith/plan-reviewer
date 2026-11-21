@@ -64,15 +64,15 @@ Extra fields we add:
 
 ## Failure modes
 
-| What fails                                              | What happens                                                                                                    |
-| ------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
-| The model's answer cannot be verified after three calls | `./review` exits 1 with the problems and writes nothing                                                         |
-| OpenRouter is down, rate limited or out of credit       | Retries with backoff, then exit 3 (exit 2 for a refused key)                                                    |
-| The review server refuses, is at its limit or is down   | Exit 2 for a refused token, exit 3 for a limit or an outage; a review that fails the local checks exits 1 (D20) |
-| A stored review fails verification                      | The page shows the plan, says the review is not shown and lists why                                             |
-| The solver hits its time or node limit                  | Returns the best schedule found, `optimal: false`, and the lower bound, so the gap is visible                   |
-| A schedule would break the contract                     | Impossible by construction, and checked: every answer passes the port of `check_contract.py` before it leaves   |
-| Browser storage is blocked                              | Corrections work for the visit from memory                                                                      |
+| What fails                                              | What happens                                                                                                  |
+| ------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
+| The model's answer cannot be verified after three calls | `./review` exits 1 with the problems and writes nothing                                                       |
+| OpenRouter is down, rate limited or out of credit       | Retries with backoff, then exit 3 (exit 2 for a refused key)                                                  |
+| The review server is at its limit or is down            | Exit 3; a review that fails the local checks exits 1 (D20)                                                    |
+| A stored review fails verification                      | The page shows the plan, says the review is not shown and lists why                                           |
+| The solver hits its time or node limit                  | Returns the best schedule found, `optimal: false`, and the lower bound, so the gap is visible                 |
+| A schedule would break the contract                     | Impossible by construction, and checked: every answer passes the port of `check_contract.py` before it leaves |
+| Browser storage is blocked                              | Corrections work for the visit from memory                                                                    |
 
 ## Testing map
 

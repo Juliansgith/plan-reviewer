@@ -1,14 +1,15 @@
 // POST /api/review: runs the review pipeline on this server, with the
-// server's model key, for ./review callers who have no key of their own
+// server's model key, so ./review needs no key or setting of its own
 // (docs/DECISIONS.md, D20; controls in docs/SECURITY.md).
 //
-// The caller sends only the plan. The model, the prompt, the schema and every
-// limit are fixed here, so a token can run plan reviews and nothing else: it
-// cannot turn the key into a general model proxy. Order of checks: enabled,
-// token, body, limits, then the model. Every request leaves one audit line
-// with no plan text, token or key in it.
+// It is open, like /api/schedule. The caller sends only the plan; the model,
+// the prompt, the schema and every limit are fixed here, so the endpoint can
+// run plan reviews and nothing else: it cannot be used as a general model
+// proxy, and the caps bound what it can spend. Order of checks: enabled, body,
+// limits, then the model. Every request leaves one audit line with no plan
+// text or key in it.
 
-import { createHash, randomUUID, timingSafeEqual } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 import { z } from "zod";
 import { reviewPlan } from "../../core/review/review";
 import { ModelServiceError, type ChatClient, type ReviewOutcome } from "../../core/review/types";
@@ -45,8 +46,6 @@ export type AuditEntry = {
 };
 
 export type ReviewEndpoint = {
-  /** SHA-256 of the bearer token, in hex. Null: the endpoint is off. */
-  tokenSha256: string | null;
   /** The server's model client. Null when the server has no model key: the endpoint is off. */
   client: ChatClient | null;
   model: string;
@@ -56,18 +55,7 @@ export type ReviewEndpoint = {
   log?: (entry: AuditEntry) => void;
 };
 
-export const tokenHash = (token: string) =>
-  createHash("sha256").update(token, "utf8").digest("hex");
-
 const BodySchema = z.strictObject({ plan: z.string() });
-
-function tokenMatches(header: string | null, expectedHex: string): boolean {
-  const match = /^Bearer\s+(\S+)$/i.exec(header ?? "");
-  if (!match) return false;
-  const given = Buffer.from(tokenHash(match[1]!), "hex");
-  const expected = Buffer.from(expectedHex, "hex");
-  return given.length === expected.length && timingSafeEqual(given, expected);
-}
 
 const MODEL_FAILURES: Record<ModelServiceError["kind"], [number, string, string]> = {
   auth: [503, "model_unavailable", "The model service refused this server's key."],
@@ -85,8 +73,6 @@ export function createReviewHandler(options: ReviewEndpoint) {
   // One JSON line per request on stdout, kept by the container log driver.
   const log =
     options.log ?? ((entry: AuditEntry) => process.stdout.write(`${JSON.stringify(entry)}\n`));
-  const tokenSha256 =
-    options.tokenSha256 && /^[0-9a-f]{64}$/.test(options.tokenSha256) ? options.tokenSha256 : null;
   const started: number[] = [];
   let running = 0;
 
@@ -122,14 +108,7 @@ export function createReviewHandler(options: ReviewEndpoint) {
     const no = (status: number, code: string, message: string, issues?: string[]) =>
       finish(refuse(status, code, message, issues), code);
 
-    if (!tokenSha256 || !client) {
-      return no(503, "not_enabled", "Reviews are not enabled on this server.");
-    }
-    if (!tokenMatches(request.headers.get("authorization"), tokenSha256)) {
-      const response = refuse(401, "unauthorized", "A valid review token is required.");
-      response.headers.set("www-authenticate", 'Bearer realm="plan-reviewer"');
-      return finish(response, "unauthorized");
-    }
+    if (!client) return no(503, "not_enabled", "Reviews are not enabled on this server.");
 
     const text = await readLimited(request, MAX_BODY_BYTES);
     if (text === null)

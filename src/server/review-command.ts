@@ -1,9 +1,9 @@
 // ./review <plan.md> <out.json>
 //
-// With OPENROUTER_API_KEY it calls the model itself. Without one, but with
-// REVIEW_API_URL and REVIEW_API_TOKEN, it asks a review server that holds the
-// key (D20), and checks the review it gets back against the plan before
-// writing it, as the page does with stored reviews.
+// By default it sends the plan to the review server, which holds the model
+// key (D20), so it needs no key or setting, and checks the review it gets back
+// against the plan before writing it, as the page does with stored reviews.
+// REVIEW_LOCAL=1 with OPENROUTER_API_KEY calls the model directly instead.
 //
 // Exit codes (docs/contracts.md: "When ./review cannot produce a review, it
 // exits with a non-zero status. We then do not read the output file."):
@@ -25,7 +25,7 @@ import {
 } from "../core/review/types";
 import { checkReviewAgainstPlan } from "../core/review/verify";
 import { DEFAULT_MODEL, OpenRouterClient } from "./openrouter";
-import { requestRemoteReview, reviewEndpoint } from "./remote-review";
+import { DEFAULT_REVIEW_SERVER, requestRemoteReview, reviewEndpoint } from "./remote-review";
 
 export type CommandIo = {
   stderr: (line: string) => void;
@@ -37,15 +37,17 @@ const USAGE = `Usage: ./review <plan.md> <out.json>
 
 Reviews an event plan with a model and writes the review as JSON.
 
-Environment, either your own model key:
+No setup needed: the plan is reviewed on the review server, which holds the
+model key, and the result is checked against the plan before it is written.
+
+Environment (all optional):
+  REVIEW_API_URL          the review server; default ${DEFAULT_REVIEW_SERVER}
+  REVIEW_TIMEOUT_SECONDS  default ${DEFAULT_BUDGET_MS / 1000}
+To call the model from this computer instead:
+  REVIEW_LOCAL=1          with
   OPENROUTER_API_KEY      get one at https://openrouter.ai/keys
-  REVIEW_MODEL            optional; default ${DEFAULT_MODEL}
-  REVIEW_REASONING        optional; off (default), low, medium or high
-or a review server that holds the key (used only without OPENROUTER_API_KEY):
-  REVIEW_API_URL          the server, for example https://reviews.example.org
-  REVIEW_API_TOKEN        the token the server's owner gave you
-and for both:
-  REVIEW_TIMEOUT_SECONDS  optional; default ${DEFAULT_BUDGET_MS / 1000}
+  REVIEW_MODEL            default ${DEFAULT_MODEL}
+  REVIEW_REASONING        off (default), low, medium or high
 
 Exit codes: 0 written, 1 no usable review, 2 usage or setup problem,
 3 model service problem. No file is written unless the exit code is 0.`;
@@ -79,13 +81,12 @@ export async function runReviewCommand(
     return 2;
   }
 
+  const local = /^(1|true|yes)$/i.test(env.REVIEW_LOCAL?.trim() ?? "");
   const apiKey = env.OPENROUTER_API_KEY?.trim();
-  const server = env.REVIEW_API_URL?.trim();
-  const token = env.REVIEW_API_TOKEN?.trim();
-  if (!apiKey && !(server && token)) {
+  if (local && !apiKey) {
     io.stderr(
-      "No model access. Set OPENROUTER_API_KEY (get a key at https://openrouter.ai/keys), " +
-        "or set REVIEW_API_URL and REVIEW_API_TOKEN to use a review server.",
+      "REVIEW_LOCAL=1 calls the model from this computer, which needs OPENROUTER_API_KEY " +
+        "(get a key at https://openrouter.ai/keys). Without REVIEW_LOCAL, the review server is used.",
     );
     return 2;
   }
@@ -99,10 +100,9 @@ export async function runReviewCommand(
   const budgetMs =
     Number.isFinite(seconds) && seconds >= 10 ? Math.min(seconds, 3600) * 1000 : DEFAULT_BUDGET_MS;
 
-  if (!apiKey) {
+  if (!local || !apiKey) {
     return reviewOnServer(plan, planPath, outPath, {
-      server: server!,
-      token: token!,
+      server: env.REVIEW_API_URL?.trim() || DEFAULT_REVIEW_SERVER,
       timeoutMs: budgetMs,
       io,
     });
@@ -153,7 +153,7 @@ async function reviewOnServer(
   plan: string,
   planPath: string,
   outPath: string,
-  options: { server: string; token: string; timeoutMs: number; io: CommandIo },
+  options: { server: string; timeoutMs: number; io: CommandIo },
 ): Promise<number> {
   const { io } = options;
   const endpoint = reviewEndpoint(options.server);
@@ -164,7 +164,6 @@ async function reviewOnServer(
   io.stderr(`Reviewing ${planPath} on the review server ${endpoint.host} ...`);
   const result = await requestRemoteReview(plan, {
     endpoint,
-    token: options.token,
     fetch: io.fetch ?? fetch,
     timeoutMs: options.timeoutMs,
   });

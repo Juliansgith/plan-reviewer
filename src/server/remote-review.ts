@@ -1,8 +1,11 @@
-// ./review's second way to reach a model, for people without an OpenRouter
-// key: send the plan to a review server (POST /api/review, D20) with a bearer
-// token. The token goes only over HTTPS, or plain HTTP to this computer, and
-// never follows a redirect. What comes back is checked by the caller against
-// the contract and the plan before anything is written.
+// How ./review reaches the model by default: it sends the plan to the review
+// server (POST /api/review, D20), which holds the model key, so reviewers need
+// no key or setting. Only over HTTPS (plain HTTP only to this computer), never
+// following a redirect. What comes back is checked by the caller against the
+// contract and the plan before anything is written.
+
+/** The deployed server. REVIEW_API_URL points ./review somewhere else. */
+export const DEFAULT_REVIEW_SERVER = "https://planreviewer.213-133-98-90.sslip.io";
 
 export type RemoteOutcome =
   { ok: true; review: unknown } | { ok: false; exit: 1 | 2 | 3; lines: string[] };
@@ -19,7 +22,7 @@ export function reviewEndpoint(base: string): URL | string {
   }
   const local = LOCAL_HOSTS.has(url.hostname);
   if (url.protocol !== "https:" && !(url.protocol === "http:" && local)) {
-    return "REVIEW_API_URL must start with https:// (plain http:// only for this computer), so the token is never sent unencrypted.";
+    return "REVIEW_API_URL must start with https:// (plain http:// only for this computer), so nobody can change the review on its way.";
   }
   return new URL("api/review", url);
 }
@@ -28,13 +31,13 @@ type ErrorBody = { error?: { code?: string; message?: string; issues?: string[] 
 
 export async function requestRemoteReview(
   plan: string,
-  options: { endpoint: URL; token: string; fetch: typeof fetch; timeoutMs: number },
+  options: { endpoint: URL; fetch: typeof fetch; timeoutMs: number },
 ): Promise<RemoteOutcome> {
   let response: Response;
   try {
     response = await options.fetch(options.endpoint.href, {
       method: "POST",
-      headers: { authorization: `Bearer ${options.token}`, "content-type": "application/json" },
+      headers: { "content-type": "application/json" },
       body: JSON.stringify({ plan }),
       redirect: "error",
       signal: AbortSignal.timeout(options.timeoutMs),
@@ -68,13 +71,6 @@ export async function requestRemoteReview(
   const error = (body as ErrorBody | null)?.error ?? {};
   const said = error.message ? `: ${error.message}` : ".";
   const status = response.status;
-  if (status === 401 || status === 403) {
-    return {
-      ok: false,
-      exit: 2,
-      lines: [`The review server refused REVIEW_API_TOKEN (${status}). Check the token.`],
-    };
-  }
   if (error.code === "no_usable_review") {
     return {
       ok: false,

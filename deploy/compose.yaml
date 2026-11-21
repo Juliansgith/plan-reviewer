@@ -2,12 +2,10 @@
 # 127.0.0.1:8100; nginx in front adds HTTPS and rate limiting.
 #   docker compose -f deploy/compose.yaml up -d --build
 #
-# Secrets live outside the repository and outside every release, in
-# ${PLAN_REVIEWER_SHARED:-/opt/plan-reviewer/shared} (docs/DEPLOY.md):
-#   openrouter_api_key  the model key for POST /api/review, owned by
-#                       root:10001, mode 0440; mounted, never in the environment
-#   review.env          REVIEW_API_TOKEN_SHA256=<hex>, the hash of the review token
-# Without them the app runs as before and /api/review stays off.
+# The model key for POST /api/review lives outside the repository and every
+# release, in ${PLAN_REVIEWER_SHARED:-/opt/plan-reviewer/shared}/openrouter_api_key,
+# owned by root:10001, mode 0440 (docs/DEPLOY.md). It is mounted as a secret,
+# never put in the environment.
 name: plan-reviewer
 
 services:
@@ -20,9 +18,6 @@ services:
     environment:
       PORT: "8000"
       OPENROUTER_API_KEY_FILE: /run/secrets/openrouter_api_key
-    env_file:
-      - path: ${PLAN_REVIEWER_SHARED:-/opt/plan-reviewer/shared}/review.env
-        required: false
     secrets:
       - openrouter_api_key
     # The key file is readable by root and group 10001 only. No account on
