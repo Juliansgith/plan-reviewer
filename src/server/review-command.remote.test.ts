@@ -5,10 +5,12 @@ import { afterEach, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { reviewPlan } from "../core/review/review";
 import type { StoredReview } from "../core/review/types";
 import { runReviewCommand } from "./review-command";
+import { DEFAULT_REVIEW_SERVER } from "./remote-review";
 
-// ./review with no model key of its own: it sends the plan to the deployed
-// server (REVIEW_API_URL, REVIEW_API_TOKEN), checks what comes back against
-// the plan, and only then writes it.
+// ./review needs no settings: it sends the plan to the deployed review
+// server, which holds the model key (D20), checks what comes back against the
+// plan, and only then writes it. REVIEW_LOCAL=1 with OPENROUTER_API_KEY calls
+// the model directly instead.
 
 const root = new URL("../../", import.meta.url);
 const planPath = new URL("data/plans/spring-market.md", root).pathname.replace(
@@ -20,9 +22,6 @@ const answer = readFileSync(
   new URL("src/core/review/__fixtures__/spring-market.model.json", root),
   "utf8",
 );
-
-const TOKEN = "remote-token-for-tests";
-const env = { REVIEW_API_URL: "https://reviews.example/", REVIEW_API_TOKEN: TOKEN };
 
 let review: StoredReview;
 beforeAll(async () => {
@@ -62,18 +61,33 @@ function run(vars: Record<string, string | undefined>, ...responses: (Response |
 const answerWith = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { "content-type": "application/json" } });
 
-describe("./review through the server", () => {
-  it("sends only the plan, with the token, and writes the review it gets back", async () => {
-    expect(await run(env, answerWith({ review }))).toBe(0);
+describe("./review through the review server", () => {
+  it("needs no settings: it sends only the plan to the deployed server", async () => {
+    expect(await run({}, answerWith({ review }))).toBe(0);
     expect(JSON.parse(readFileSync(out, "utf8"))).toEqual(review);
     const [{ url, init }] = requests as [{ url: string; init: RequestInit }];
-    expect(url).toBe("https://reviews.example/api/review");
+    expect(url).toBe(`${DEFAULT_REVIEW_SERVER}/api/review`);
+    expect(DEFAULT_REVIEW_SERVER).toMatch(/^https:\/\//);
     expect(init.method).toBe("POST");
     expect(init.redirect).toBe("error");
-    expect(new Headers(init.headers).get("authorization")).toBe(`Bearer ${TOKEN}`);
+    expect(new Headers(init.headers).get("authorization")).toBeNull();
     expect(JSON.parse(String(init.body))).toEqual({ plan });
-    expect(messages.join("\n")).toContain("reviews.example");
-    expect(messages.join("\n")).not.toContain(TOKEN);
+  });
+
+  it("uses the server even when a model key is set, unless REVIEW_LOCAL=1", async () => {
+    expect(await run({ OPENROUTER_API_KEY: "sk-or-test" }, answerWith({ review }))).toBe(0);
+    expect(requests[0]!.url).toContain("/api/review");
+    expect(new Headers(requests[0]!.init.headers).get("authorization")).toBeNull();
+  });
+
+  it("can point at another server", async () => {
+    expect(await run({ REVIEW_API_URL: "https://reviews.example/" }, answerWith({ review }))).toBe(
+      0,
+    );
+    expect(requests[0]!.url).toBe("https://reviews.example/api/review");
+    expect(await run({ REVIEW_API_URL: "http://127.0.0.1:3000" }, answerWith({ review }))).toBe(0);
+    expect(await run({ REVIEW_API_URL: "http://reviews.example" })).toBe(2);
+    expect(messages.join("\n")).toContain("must start with https://");
   });
 
   it("checks the server's review against the plan, and writes nothing if it fails", async () => {
@@ -81,22 +95,12 @@ describe("./review through the server", () => {
       ...review,
       tasks: review.tasks.map((t, i) => (i === 0 ? { ...t, quote: "Hire a brass band" } : t)),
     };
-    expect(await run(env, answerWith({ review: tampered }))).toBe(1);
+    expect(await run({}, answerWith({ review: tampered }))).toBe(1);
     expect(existsSync(out)).toBe(false);
     expect(messages.join("\n")).toContain('the quote "Hire a brass band" is not in the plan');
 
-    expect(await run(env, answerWith({ review: { deadline_day: "soon" } }))).toBe(1);
+    expect(await run({}, answerWith({ review: { deadline_day: "soon" } }))).toBe(1);
     expect(existsSync(out)).toBe(false);
-  });
-
-  it("never sends the token over plain HTTP, except to this computer", async () => {
-    expect(await run({ ...env, REVIEW_API_URL: "http://reviews.example" })).toBe(2);
-    expect(requests).toHaveLength(0);
-    expect(messages.join("\n")).toContain("must start with https://");
-
-    expect(
-      await run({ ...env, REVIEW_API_URL: "http://127.0.0.1:3000" }, answerWith({ review })),
-    ).toBe(0);
   });
 
   it("maps the server's answers to the usual exit codes", async () => {
@@ -105,18 +109,16 @@ describe("./review through the server", () => {
         { error: { code, message: `${code} message`, ...(issues && { issues }) } },
         status,
       );
-    expect(await run(env, refusal(401, "unauthorized"))).toBe(2);
-    expect(messages.join("\n")).toContain("REVIEW_API_TOKEN");
-    expect(await run(env, refusal(422, "no_usable_review", ["Task T9 is unknown."]))).toBe(1);
+    expect(await run({}, refusal(422, "no_usable_review", ["Task T9 is unknown."]))).toBe(1);
     expect(messages.join("\n")).toContain("Task T9 is unknown.");
-    expect(await run(env, refusal(413, "too_large"))).toBe(2);
-    expect(await run(env, refusal(429, "hourly_limit"))).toBe(3);
-    expect(await run(env, refusal(503, "model_unavailable"))).toBe(3);
-    expect(await run(env, new TypeError("fetch failed"))).toBe(3);
+    expect(await run({}, refusal(413, "too_large"))).toBe(2);
+    expect(await run({}, refusal(429, "hourly_limit"))).toBe(3);
+    expect(await run({}, refusal(503, "model_unavailable"))).toBe(3);
+    expect(await run({}, new TypeError("fetch failed"))).toBe(3);
     expect(existsSync(out)).toBe(false);
   });
 
-  it("prefers a model key of its own when both are set", async () => {
+  it("calls the model directly with REVIEW_LOCAL=1 and a key, and says so without a key", async () => {
     const own = new Response(
       JSON.stringify({
         model: "test-model",
@@ -124,14 +126,10 @@ describe("./review through the server", () => {
       }),
       { status: 200 },
     );
-    expect(await run({ ...env, OPENROUTER_API_KEY: "sk-or-test" }, own)).toBe(0);
+    expect(await run({ REVIEW_LOCAL: "1", OPENROUTER_API_KEY: "sk-or-test" }, own)).toBe(0);
     expect(requests[0]!.url).toContain("openrouter.ai");
-  });
 
-  it("explains both ways to run it when neither is set", async () => {
-    expect(await run({})).toBe(2);
-    const text = messages.join("\n");
-    expect(text).toContain("OPENROUTER_API_KEY");
-    expect(text).toContain("REVIEW_API_URL and REVIEW_API_TOKEN");
+    expect(await run({ REVIEW_LOCAL: "1" })).toBe(2);
+    expect(messages.join("\n")).toContain("OPENROUTER_API_KEY");
   });
 });

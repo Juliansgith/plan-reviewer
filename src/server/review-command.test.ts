@@ -42,7 +42,7 @@ function run(args: string[], env: Record<string, string | undefined>, responses:
     sleep: async () => {},
   });
 }
-const env = { OPENROUTER_API_KEY: "sk-or-test" };
+const env = { REVIEW_LOCAL: "1", OPENROUTER_API_KEY: "sk-or-test" };
 
 describe("./review command", () => {
   it("writes a contract-valid review and exits 0", async () => {
@@ -73,7 +73,7 @@ describe("./review command", () => {
 
   it("exits 2 and names the variable when the API key is missing", async () => {
     const out = join(dir, "out.json");
-    expect(await run([planPath, out], {})).toBe(2);
+    expect(await run([planPath, out], { REVIEW_LOCAL: "1" })).toBe(2);
     expect(messages.join("\n")).toContain("OPENROUTER_API_KEY");
     expect(existsSync(out)).toBe(false);
   });
@@ -180,6 +180,7 @@ describe("the real CLI process", () => {
             cwd: new URL(".", root),
             env: {
               ...process.env,
+              REVIEW_LOCAL: "1",
               OPENROUTER_API_KEY: "sk-or-test",
               OPENROUTER_BASE_URL: `http://127.0.0.1:${port}`,
             },

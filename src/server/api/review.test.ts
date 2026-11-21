@@ -7,7 +7,7 @@ import {
   type ChatRequest,
   type ChatResponse,
 } from "../../core/review/types";
-import { createReviewHandler, MAX_PLAN_BYTES, tokenHash, type AuditEntry } from "./review";
+import { createReviewHandler, MAX_PLAN_BYTES, type AuditEntry } from "./review";
 
 const root = new URL("../../../", import.meta.url);
 const plan = readFileSync(new URL("data/plans/spring-market.md", root), "utf8");
@@ -16,7 +16,6 @@ const answer = readFileSync(
   "utf8",
 );
 
-const TOKEN = "k3Jq0w_example-token-for-tests-only-x7PZ";
 const reply = (content: string): ChatResponse => ({
   content,
   model: "test-model",
@@ -46,7 +45,6 @@ function scripted(...answers: (string | Error)[]): ChatClient {
 
 function handler(client: ChatClient | null = scripted(), overrides = {}) {
   return createReviewHandler({
-    tokenSha256: tokenHash(TOKEN),
     client,
     model: "test-model",
     now: () => clock,
@@ -55,42 +53,26 @@ function handler(client: ChatClient | null = scripted(), overrides = {}) {
   });
 }
 
-const post = (
-  handle: (request: Request) => Promise<Response>,
-  body: unknown,
-  token: string | null = TOKEN,
-) =>
+const post = (handle: (request: Request) => Promise<Response>, body: unknown) =>
   handle(
     new Request("http://localhost/api/review", {
       method: "POST",
-      headers: {
-        "content-type": "application/json",
-        "x-real-ip": "203.0.113.7",
-        ...(token !== null && { authorization: `Bearer ${token}` }),
-      },
+      headers: { "content-type": "application/json", "x-real-ip": "203.0.113.7" },
       body: typeof body === "string" ? body : JSON.stringify(body),
     }),
   );
 
 describe("POST /api/review", () => {
-  it("is off unless the server has both a token hash and a model key", async () => {
-    for (const handle of [handler(null), handler(scripted(), { tokenSha256: null })]) {
-      const response = await post(handle, { plan });
-      expect(response.status).toBe(503);
-      expect((await response.json()).error.code).toBe("not_enabled");
-    }
-    expect(calls).toHaveLength(0);
+  it("needs no token or key from the caller: the server's key does the work", async () => {
+    const response = await post(handler(), { plan });
+    expect(response.status).toBe(200);
+    expect(calls).toHaveLength(1);
   });
 
-  it("refuses a missing or wrong token before reading the plan or calling the model", async () => {
-    const handle = handler();
-    for (const token of [null, "wrong", `${TOKEN}x`, ""]) {
-      const response = await post(handle, { plan }, token);
-      expect(response.status).toBe(401);
-      expect(response.headers.get("www-authenticate")).toBe('Bearer realm="plan-reviewer"');
-      expect((await response.json()).error.code).toBe("unauthorized");
-    }
-    expect(calls).toHaveLength(0);
+  it("is off when the server has no model key", async () => {
+    const response = await post(handler(null), { plan });
+    expect(response.status).toBe(503);
+    expect((await response.json()).error.code).toBe("not_enabled");
   });
 
   it("accepts only a plan: no other fields, no empty or oversized plans, valid JSON", async () => {
@@ -111,7 +93,6 @@ describe("POST /api/review", () => {
     const { review } = await response.json();
     expect(parseReview(review).ok).toBe(true);
     expect(review.deadline_day).toBe(21);
-    expect(calls).toHaveLength(1);
     expect(calls[0]!.model).toBe("test-model");
     expect(calls[0]!.messages.at(-1)!.content).toContain("Spring Market");
   });
@@ -135,8 +116,7 @@ describe("POST /api/review", () => {
     for (const [error, status] of cases) {
       const response = await post(handler(scripted(error)), { plan });
       expect(response.status).toBe(status);
-      const text = await response.text();
-      expect(text).not.toMatch(/sk-or|boom|\/srv/);
+      expect(await response.text()).not.toMatch(/sk-or|boom|\/srv/);
     }
   });
 
@@ -179,18 +159,18 @@ describe("POST /api/review", () => {
     expect((await second).status).toBe(200);
   });
 
-  it("writes one audit line per request, without the plan, the token or the key", async () => {
-    const handle = handler(scripted(new ModelServiceError("bad key sk-or-v1-secret", "auth")));
-    await post(handle, { plan }, "wrong");
-    await post(handle, { plan });
+  it("writes one audit line per request, without the plan or the key", async () => {
+    await post(handler(scripted(new ModelServiceError("bad key sk-or-v1-secret", "auth"))), {
+      plan,
+    });
+    await post(handler(), "{not json");
     await post(handler(), { plan });
     expect(logs.map((l) => [l.outcome, l.status, l.reason ?? null])).toEqual([
-      ["refused", 401, "unauthorized"],
       ["failed", 503, "model_unavailable"],
+      ["refused", 400, "invalid_json"],
       ["ok", 200, null],
     ]);
-    const ok = logs[2]!;
-    expect(ok).toMatchObject({
+    expect(logs[2]).toMatchObject({
       event: "review_request",
       client: "203.0.113.7",
       plan_bytes: Buffer.byteLength(plan),
@@ -198,9 +178,8 @@ describe("POST /api/review", () => {
       prompt_tokens: 100,
       completion_tokens: 50,
     });
-    expect(ok.plan_sha256).toMatch(/^[0-9a-f]{16}$/);
+    expect(logs[2]!.plan_sha256).toMatch(/^[0-9a-f]{16}$/);
     const text = JSON.stringify(logs);
-    expect(text).not.toContain(TOKEN);
     expect(text).not.toContain("Spring Market");
     expect(text).not.toContain("sk-or");
   });
