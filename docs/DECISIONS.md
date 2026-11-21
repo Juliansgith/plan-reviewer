@@ -107,9 +107,21 @@ The deployed page and the plan data need a password (nginx basic auth, over HTTP
 
 The image runs on an existing server next to other apps: bound to `127.0.0.1:8100`, read-only, without capabilities, capped at 2 CPUs and 1 GB, restarted unless stopped. nginx adds HTTPS (Let's Encrypt, renewed automatically), the password and the rate limit. The name `planreviewer.213-133-98-90.sslip.io` resolves to the server without a DNS record. `deploy/deploy.sh` ships committed code into a fresh release folder and waits for the health check (docs/DEPLOY.md).
 
+## D19. Every remark says what to do; the timeline moves who and how long
+
+Nora could not tell how to act on a "Must fix" remark, and expected to drag the timeline. Remarks are problems in the committee's plan, so they are resolved by sending the plan back; the page now says that, and each remark has a "What you can do" box (`src/ui/fixes.ts`):
+
+- Where code knows the options, she can try one with a click: which task in a circle goes first ("Do "Take out the event insurance" first"), which of the plan's stated deadlines to use ("Use day 35"). The options come from the scheduler and the plan's own words, not from the model.
+- Otherwise a button takes her to the place to change: the timeline for a late plan, the owner field for a task nobody owns, the deadline field when there is none.
+- Remarks only the committee can answer (the model's, instructions to the reviewer) say they are in her reply, with no buttons.
+- When her changes sort a remark out, it turns green and says what changed. Her changes stay on her computer (D11), and the page says so.
+
+The timeline can be dragged, but only in the two ways the contract can express: a bar dropped on another person's row hands the task over, and dragging its end changes how many days it takes. Start days are worked out by the scheduler, so a bar cannot be dragged to a day; that would need a "not before" date the contract does not have. The task table does the same by keyboard, so nothing depends on dragging (WCAG 2.5.7).
+
 ## D16. What we cut
 
 - Uploading new plans from the page and reviewing them live (D12).
 - Server-side storage of corrections, accounts and sharing (D11).
 - Calendar dates: plans count days from kickoff, as all three samples do.
 - Partial availability (someone working half days) and tasks that can be split between people: the contract has neither.
+- Dragging a task to a start day (D19): start days are the scheduler's answer, not an input.

@@ -2,8 +2,10 @@
 
 import type { ReviewFinding, Severity } from "@/core/review/types";
 import type { Span } from "@/core/text";
+import type { FixAction, FixHelp } from "@/ui/fixes";
 import { Chip } from "../Chip";
 import { Icon } from "../Icon";
+import { FixBox } from "./FixBox";
 import styles from "./plan.module.css";
 
 type Props = {
@@ -11,6 +13,9 @@ type Props = {
   spans: readonly (Span | null)[];
   active: string | null;
   corrected: boolean;
+  /** What Nora can do about each finding, in the same order. */
+  fixes: readonly FixHelp[];
+  onFix: (action: FixAction) => void;
   onShow: (id: string) => void;
   onCopyReply: () => void;
   copyState: "idle" | "copied" | "failed";
@@ -34,16 +39,27 @@ export function FindingList(props: Props) {
 
   const card = ({ finding, index }: { finding: ReviewFinding; index: number }) => {
     const id = `finding:${index}`;
-    const stale = corrected && (finding.kind === "late" || finding.kind === "cycle");
+    const help = props.fixes[index];
+    const sorted = !!help?.sorted;
+    const stale = corrected && !sorted && (finding.kind === "late" || finding.kind === "cycle");
+    const edge = sorted
+      ? styles.findingSorted
+      : finding.severity === "blocker"
+        ? styles.findingBlocker
+        : "";
     return (
       <li
         key={id}
         id={`finding-${index}`}
-        className={`${styles.finding} ${finding.severity === "blocker" ? styles.findingBlocker : ""} ${active === id ? styles.findingActive : ""}`}
+        className={`${styles.finding} ${edge} ${active === id ? styles.findingActive : ""}`}
       >
         <div className={styles.findingHead}>
           <h4 className={styles.findingTitle}>{finding.title}</h4>
-          {finding.severity === "blocker" && <Chip tone="bad">Must fix</Chip>}
+          {sorted ? (
+            <Chip tone="good">Sorted</Chip>
+          ) : (
+            finding.severity === "blocker" && <Chip tone="bad">Must fix</Chip>
+          )}
         </div>
         <p className={styles.findingDetail}>{finding.detail}</p>
         {finding.quote && (
@@ -66,6 +82,7 @@ export function FindingList(props: Props) {
             {stale && " This was worked out before your changes."}
           </p>
         )}
+        {help && <FixBox help={help} onFix={props.onFix} />}
       </li>
     );
   };
@@ -78,6 +95,13 @@ export function FindingList(props: Props) {
           ? "Nothing needs fixing."
           : `${countText(counts[0]!, "thing must", "things must")} be fixed, ${countText(counts[1]!, "thing", "things")} should be, and ${countText(counts[2]!, "small point", "small points")}.`}
       </p>
+      {findings.length > 0 && (
+        <p className={styles.sectionSteps}>
+          These are problems in the committee&apos;s plan. To get them fixed, send the plan back
+          with the reply at the bottom of this list. If you already know the answer, try it here
+          first and see the new dates.
+        </p>
+      )}
       {GROUPS.slice(0, 2).map(({ severity, title }) => {
         const items = indexed.filter((f) => f.finding.severity === severity);
         if (!items.length) return null;

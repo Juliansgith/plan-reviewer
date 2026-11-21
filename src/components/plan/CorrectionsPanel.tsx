@@ -41,6 +41,10 @@ export function CorrectionsPanel({
           <li key={i}>{describeChange(change)}</li>
         ))}
       </ul>
+      <p className={styles.sectionIntro}>
+        Only you can see these changes. The committee&apos;s plan stays as it is until they send a
+        new one.
+      </p>
       <div className={styles.actions}>
         <button type="button" className={styles.secondary} onClick={onDiscard}>
           <Icon name="undo" size={18} />

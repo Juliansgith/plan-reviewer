@@ -30,14 +30,14 @@ One TypeScript codebase serves the page and the API (Next.js) and runs the `./re
 
 ## Layers
 
-| Folder           | What                                                                                                                 | May import                                    |
-| ---------------- | -------------------------------------------------------------------------------------------------------------------- | --------------------------------------------- |
-| `src/core`       | Contracts (zod), scheduler, review pipeline, text matching. Pure: no file system, network or framework.              | nothing outside `src/core`                    |
-| `src/server`     | Node adapters: OpenRouter client, `./review` command, plan repository, API handlers (`Request` in, `Response` out)   | `src/core`                                    |
-| `src/ui`         | Page logic without React: verdict wording, correction diffs, markdown with source offsets, reply text, storage store | `src/core`                                    |
-| `src/components` | React components                                                                                                     | `src/ui`, `src/core`, types from `src/server` |
-| `src/app`        | Next.js pages and route handlers; a few lines each, wiring the layers above                                          | everything                                    |
-| `src/cli`        | Entry points for `./review` and `npm run eval`                                                                       | `src/server`, `src/core`                      |
+| Folder           | What                                                                                                                                                                  | May import                                    |
+| ---------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------- |
+| `src/core`       | Contracts (zod), scheduler, review pipeline, text matching. Pure: no file system, network or framework.                                                               | nothing outside `src/core`                    |
+| `src/server`     | Node adapters: OpenRouter client, `./review` command, plan repository, API handlers (`Request` in, `Response` out)                                                    | `src/core`                                    |
+| `src/ui`         | Page logic without React: verdict wording, correction diffs, what to do about each remark, timeline dragging, markdown with source offsets, reply text, storage store | `src/core`                                    |
+| `src/components` | React components                                                                                                                                                      | `src/ui`, `src/core`, types from `src/server` |
+| `src/app`        | Next.js pages and route handlers; a few lines each, wiring the layers above                                                                                           | everything                                    |
+| `src/cli`        | Entry points for `./review` and `npm run eval`                                                                                                                        | `src/server`, `src/core`                      |
 
 Tests sit next to the code they test (`*.test.ts` in Node, `*.test.tsx` in jsdom). Browser tests are in `e2e/`.
 

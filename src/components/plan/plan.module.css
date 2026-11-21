@@ -291,6 +291,17 @@
   border-left: 6px solid var(--color-attention);
 }
 
+.findingSorted {
+  border-left: 6px solid var(--color-deep-green);
+}
+
+.sectionSteps {
+  margin: 0 0 18px;
+  font-size: var(--text-base);
+  line-height: 1.5;
+  color: var(--color-text);
+}
+
 .findingActive {
   border-color: var(--color-deep-green);
   box-shadow: 0 0 0 3px var(--color-primary-tint);
@@ -369,135 +380,6 @@
   padding: 10px;
   border: 1.5px solid var(--color-border-strong);
   border-radius: var(--radius-card);
-}
-
-/* Timeline */
-.timeline {
-  margin: 8px 0 20px;
-}
-
-.timelineAxis,
-.timelineRow {
-  display: grid;
-  grid-template-columns: 110px minmax(0, 1fr);
-  gap: 10px;
-  align-items: center;
-}
-
-.timelineAxis {
-  height: 22px;
-}
-
-.timelineRow {
-  min-height: 42px;
-  border-top: 1px solid var(--color-border-half);
-}
-
-.timelineOwner {
-  font-size: var(--text-base);
-  font-weight: 600;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.track {
-  position: relative;
-  height: 36px;
-}
-
-.timelineAxis .track {
-  height: 22px;
-}
-
-.axisLabel {
-  font-size: var(--text-small);
-  font-weight: 600;
-  color: var(--color-text-muted);
-}
-
-.tick {
-  position: absolute;
-  transform: translateX(-50%);
-  font-size: var(--text-small);
-  color: var(--color-text-muted);
-}
-
-.bar {
-  position: absolute;
-  top: 4px;
-  height: 28px;
-  min-width: 6px;
-  padding: 0 8px;
-  overflow: hidden;
-  border: 1.5px solid var(--color-border-strong);
-  border-radius: 6px;
-  background: var(--color-surface);
-  color: var(--color-text);
-  font-size: var(--text-small);
-  text-align: left;
-  white-space: nowrap;
-  cursor: pointer;
-}
-
-.bar span {
-  display: block;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.barCritical {
-  background: var(--color-lime);
-  border-color: var(--color-deep-green);
-  color: var(--color-deep-green);
-  font-weight: 600;
-}
-
-.barLate {
-  border-color: var(--color-attention);
-  border-width: 2px;
-}
-
-.barActive {
-  box-shadow: 0 0 0 3px var(--color-deep-green);
-}
-
-.deadlineLine {
-  position: absolute;
-  top: -4px;
-  bottom: -4px;
-  border-left: 3px dashed var(--color-attention);
-  pointer-events: none;
-}
-
-.legend {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 6px 8px;
-  margin: 12px 0 0;
-  font-size: var(--text-small);
-  color: var(--color-text);
-}
-
-.legendCritical,
-.legendDeadline {
-  display: inline-block;
-  width: 18px;
-  height: 12px;
-  margin-left: 12px;
-}
-
-.legendCritical {
-  margin-left: 0;
-  background: var(--color-lime);
-  border: 1.5px solid var(--color-deep-green);
-  border-radius: 3px;
-}
-
-.legendDeadline {
-  width: 0;
-  border-left: 3px dashed var(--color-attention);
 }
 
 .blocked {

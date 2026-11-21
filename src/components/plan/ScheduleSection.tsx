@@ -2,9 +2,10 @@
 
 import type { ScheduleResult } from "@/core/schedule/types";
 import type { Draft } from "@/ui/corrections";
+import { fieldId } from "@/ui/fixes";
 import { Icon } from "../Icon";
 import { TaskTable } from "./TaskTable";
-import { Timeline } from "./Timeline";
+import { Timeline, type TaskPatch } from "./Timeline";
 import styles from "./plan.module.css";
 
 type Props = {
@@ -18,15 +19,25 @@ type Props = {
   onChange: (draft: Draft) => void;
 };
 
+/** The section heading's id, so a remark can bring Nora here. */
+export const SCHEDULE_TITLE_ID = "schedule-title";
+
 /** Who does what and when, with the switch into changing tasks. */
 export function ScheduleSection(props: Props) {
   const { draft, schedule, editing, active } = props;
   const cycleIds = new Set(schedule.status === "cycle" ? schedule.cycle_groups.flat() : []);
+  const changeTask = (id: string, patch: TaskPatch) =>
+    props.onChange({
+      deadline_day: draft.deadline_day,
+      tasks: draft.tasks.map((task) => (task.id === id ? { ...task, ...patch } : task)),
+    });
 
   return (
     <section aria-label="Schedule" className={styles.section}>
       <div className={styles.sectionHead}>
-        <h2 className={styles.sectionTitle}>Who does what, and when</h2>
+        <h2 id={SCHEDULE_TITLE_ID} tabIndex={-1} className={styles.sectionTitle}>
+          Who does what, and when
+        </h2>
         <button
           type="button"
           className={editing ? styles.secondary : styles.primary}
@@ -40,12 +51,13 @@ export function ScheduleSection(props: Props) {
       <p className={styles.sectionIntro}>
         {editing
           ? "Change who does a task, how many days it takes, or what it waits for. The dates update as you type."
-          : "If you know something the plan doesn't say, change the tasks and see the new dates."}
+          : "To try a change, drag a task to another person, or drag its end to make it longer or shorter. To change anything else, use Change tasks."}
       </p>
       {editing && (
         <label className={styles.deadlineEdit}>
           Deadline (day)
           <input
+            id={fieldId.deadline}
             type="number"
             min={0}
             className={styles.input}
@@ -67,6 +79,7 @@ export function ScheduleSection(props: Props) {
           deadline={draft.deadline_day}
           active={active}
           onSelect={props.onSelect}
+          onChangeTask={changeTask}
         />
       ) : (
         <p className={styles.blocked}>

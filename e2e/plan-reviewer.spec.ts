@@ -92,6 +92,8 @@ test.describe("plan page", () => {
 
   test("hands a task to someone else by dragging it to their row", async ({ page }) => {
     await page.goto("/plans/test-fair");
+    // Mouse positions are on the screen, so the timeline must be on it.
+    await page.getByRole("group", { name: /^Schedule by person/ }).scrollIntoViewIfNeeded();
     const stewards = await page.getByRole("button", { name: /^Find stewards,/ }).boundingBox();
     const hall = await page.getByRole("button", { name: /^Book the hall,/ }).boundingBox();
     await page.mouse.move(stewards!.x + 10, stewards!.y + stewards!.height / 2);
@@ -109,6 +111,7 @@ test.describe("plan page", () => {
 
   test("shortens a task by dragging its end", async ({ page }) => {
     await page.goto("/plans/test-fair");
+    await page.getByRole("group", { name: /^Schedule by person/ }).scrollIntoViewIfNeeded();
     const posters = await page.getByRole("button", { name: /^Print posters,/ }).boundingBox();
     const perDay = posters!.width / 4;
     const y = posters!.y + posters!.height / 2;

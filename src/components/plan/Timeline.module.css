@@ -1,0 +1,190 @@
+/* The timeline: one row per person, bars by day. Bars can be dragged to
+   another person or stretched; see src/ui/timeline-drag.ts. */
+
+.timeline {
+  margin: 8px 0 20px;
+}
+
+.timelineAxis,
+.timelineRow {
+  display: grid;
+  grid-template-columns: 110px minmax(0, 1fr);
+  gap: 10px;
+  align-items: center;
+}
+
+.timelineAxis {
+  height: 22px;
+}
+
+.timelineRow {
+  min-height: 42px;
+  border-top: 1px solid var(--color-border-half);
+}
+
+.timelineOwner {
+  font-size: var(--text-base);
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.track {
+  position: relative;
+  height: 36px;
+}
+
+.timelineAxis .track {
+  height: 22px;
+}
+
+.axisLabel {
+  font-size: var(--text-small);
+  font-weight: 600;
+  color: var(--color-text-muted);
+}
+
+.tick {
+  position: absolute;
+  transform: translateX(-50%);
+  font-size: var(--text-small);
+  color: var(--color-text-muted);
+}
+
+.bar {
+  position: absolute;
+  top: 4px;
+  height: 28px;
+  min-width: 6px;
+  padding: 0 8px;
+  overflow: hidden;
+  border: 1.5px solid var(--color-border-strong);
+  border-radius: 6px;
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-size: var(--text-small);
+  text-align: left;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.bar span {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.barCritical {
+  background: var(--color-lime);
+  border-color: var(--color-deep-green);
+  color: var(--color-deep-green);
+  font-weight: 600;
+}
+
+.barLate {
+  border-color: var(--color-attention);
+  border-width: 2px;
+}
+
+.barActive {
+  box-shadow: 0 0 0 3px var(--color-deep-green);
+}
+
+.deadlineLine {
+  position: absolute;
+  top: -4px;
+  bottom: -4px;
+  border-left: 3px dashed var(--color-attention);
+  pointer-events: none;
+}
+
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 8px;
+  margin: 12px 0 0;
+  font-size: var(--text-small);
+  color: var(--color-text);
+}
+
+.legendCritical,
+.legendDeadline {
+  display: inline-block;
+  width: 18px;
+  height: 12px;
+  margin-left: 12px;
+}
+
+.legendCritical {
+  margin-left: 0;
+  background: var(--color-lime);
+  border: 1.5px solid var(--color-deep-green);
+  border-radius: 3px;
+}
+
+.legendDeadline {
+  width: 0;
+  border-left: 3px dashed var(--color-attention);
+}
+
+/* Dragging */
+.draggable {
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+}
+
+.dragging {
+  z-index: 2;
+  cursor: grabbing;
+  box-shadow: 0 6px 16px rgb(0 0 0 / 22%);
+}
+
+.stretch {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 12px;
+  max-width: 40%;
+  cursor: ew-resize;
+}
+
+.stretch::after {
+  content: "";
+  position: absolute;
+  top: 7px;
+  bottom: 7px;
+  right: 4px;
+  border-right: 2px solid currentColor;
+  opacity: 0.55;
+}
+
+.rowTarget {
+  background: var(--color-primary-tint);
+  outline: 2px solid var(--color-deep-green);
+  outline-offset: -2px;
+  border-radius: 6px;
+}
+
+.dragTip {
+  position: fixed;
+  z-index: 10;
+  margin: 0;
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: var(--color-deep-green);
+  color: #fff;
+  font-size: var(--text-base);
+  font-weight: 600;
+  pointer-events: none;
+  white-space: nowrap;
+}
+
+.hint {
+  margin: 0 0 12px;
+  font-size: var(--text-base);
+  color: var(--color-text-muted);
+}

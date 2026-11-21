@@ -4,6 +4,7 @@ import { useState } from "react";
 import type { Task } from "@/core/contracts";
 import type { ScheduleResult } from "@/core/schedule/types";
 import { nextTaskId } from "@/ui/corrections";
+import { fieldId } from "@/ui/fixes";
 import { Icon } from "../Icon";
 import styles from "./plan.module.css";
 
@@ -21,6 +22,12 @@ type Props = {
 /** A number field that only reports whole numbers of at least 1. */
 function DaysInput({ task, onCommit }: { task: Task; onCommit: (days: number) => void }) {
   const [text, setText] = useState(String(task.duration_days));
+  // A drag in the timeline can change the days; show the new number.
+  const [shown, setShown] = useState(task.duration_days);
+  if (shown !== task.duration_days) {
+    setShown(task.duration_days);
+    setText(String(task.duration_days));
+  }
   const valid = /^\d+$/.test(text) && Number(text) >= 1;
   return (
     <input
@@ -127,6 +134,7 @@ export function TaskTable({
                 <td>
                   {editing ? (
                     <input
+                      id={fieldId.owner(task.id)}
                       className={styles.input}
                       aria-label={`Owner of ${task.name}`}
                       list="owners"

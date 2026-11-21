@@ -25,12 +25,13 @@ import {
   type Draft,
 } from "@/ui/corrections";
 import { draftStorage, useStoredValue } from "@/ui/draft-store";
+import { fixesFor, type FixAction } from "@/ui/fixes";
 import type { Highlight } from "@/ui/markdown";
 import { describeVerdict } from "@/ui/verdict";
 import { CorrectionsPanel } from "./CorrectionsPanel";
 import { FindingList } from "./FindingList";
 import { PlanDocument } from "./PlanDocument";
-import { ScheduleSection } from "./ScheduleSection";
+import { SCHEDULE_TITLE_ID, ScheduleSection } from "./ScheduleSection";
 import { VerdictPanel } from "./VerdictPanel";
 import styles from "./plan.module.css";
 
@@ -68,6 +69,7 @@ export function PlanWorkspace({ view }: { view: PlanView }) {
   const [answer, setAnswer] = useState<Answer | null>(null);
   const [active, setActive] = useState<string | null>(null);
   const [copyState, setCopyState] = useState<"idle" | "copied" | "failed">("idle");
+  const [focusRequest, setFocusRequest] = useState<{ id: string } | null>(null);
   const scrollTarget = useRef<"plan" | "finding" | null>(null);
 
   const changes = useMemo(() => (draft ? diffCorrections(original, draft) : []), [draft, original]);
@@ -173,6 +175,32 @@ export function PlanWorkspace({ view }: { view: PlanView }) {
     scrollTarget.current = null;
   }, [active]);
 
+  // A remark's button can send Nora to a field (or the timeline): once it is
+  // on screen, scroll to it and put the cursor there.
+  useEffect(() => {
+    if (!focusRequest) return;
+    const element = document.getElementById(focusRequest.id);
+    element?.scrollIntoView({
+      block: "center",
+      behavior: prefersReducedMotion() ? "auto" : "smooth",
+    });
+    element?.focus({ preventScroll: true });
+  }, [focusRequest]);
+
+  const fixes = fixesFor(review.findings, {
+    original,
+    current,
+    originalSchedule: view.schedule!,
+    currentSchedule: corrected ? draftSchedule : view.schedule!,
+    deadlineCandidates: view.deadlineCandidates,
+  });
+  const fix = (action: FixAction) => {
+    if (action.kind === "apply") return save(action.draft);
+    if (action.kind === "edit") setEditing(true);
+    const target = action.kind === "edit" ? action.focus : null;
+    setFocusRequest({ id: target ?? SCHEDULE_TITLE_ID });
+  };
+
   const showInPlan = (id: string) => {
     scrollTarget.current = "plan";
     setActive(id);
@@ -225,6 +253,8 @@ export function PlanWorkspace({ view }: { view: PlanView }) {
           spans={view.quotes.findings}
           active={active}
           corrected={corrected}
+          fixes={fixes}
+          onFix={fix}
           onShow={showInPlan}
           onCopyReply={copyReply}
           copyState={copyState}
