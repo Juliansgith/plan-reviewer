@@ -2,7 +2,7 @@
 
 ## Time spent
 
-**[To fill in: hours of your own time.]** The work was done with an AI coding agent; see the last sections.
+About 20 to 25 minutes of my own direct attention. An AI coding agent (Claude Code) did the rest under my direction, in about 3 hours of working time; see "How I used AI tools".
 
 ## What I did
 
@@ -31,7 +31,14 @@ Uploading and reviewing new plans from the page ([D12](docs/DECISIONS.md): a pub
 
 ## How I used AI tools
 
-**[To review and make true in your own words.]** Claude Code wrote most of the code, tests and documents under my direction. I set the priorities, chose the stack and the model family, and reviewed the decisions in docs/DECISIONS.md. It worked test-first, and I checked its work by: property tests against an independent brute-force solver; the graders' checker against the built server and the Docker image; the review pipeline against hand-checked model answers, including one that obeys the injection; browser tests with accessibility scans; and using the page myself.
+Claude Code did the investigation, wrote the code, tests and documents, ran the model evaluation and deployed the app. My part was direction and judgement:
+
+- I had it look for prompt injection and traps in the starter before anything else, and score the starter against my other projects.
+- I chose the stack (Next.js with a Node backend, OpenRouter), required test-first work with every decision recorded, and chose a cheap model family over a frontier one; the evaluation then picked the model and its settings. I asked for the evaluation to make comparing models easy.
+- I chose to deploy on my own server, behind a password.
+- I used the deployed page as Nora would and sent it back three times: the contrast was too low, it was not clear how to resolve a "Must fix", and I expected to drag tasks in the timeline. Those became [D13](docs/DECISIONS.md) and [D19](docs/DECISIONS.md).
+
+The checks I relied on: property tests against an independent brute-force solver; the graders' checker against the built server and the Docker image; the review pipeline against hand-checked model answers, including one that obeys the injection; browser tests with accessibility scans.
 
 ## Environment variables my review command needs
 
