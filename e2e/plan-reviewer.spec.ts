@@ -71,6 +71,59 @@ test.describe("plan page", () => {
     await expect(page.getByText("The plan tries to direct the review")).toBeVisible();
   });
 
+  test("sorts out a must-fix remark from the remark itself", async ({ page }) => {
+    await page.goto("/plans/harbour-run");
+    const verdict = page.getByRole("region", { name: "Verdict" }).getByRole("heading");
+    await expect(verdict).toHaveText("Can't be scheduled");
+
+    const circle = page
+      .getByRole("listitem")
+      .filter({ has: page.getByRole("heading", { name: "Tasks wait on each other in a circle" }) });
+    await circle.getByRole("button", { name: 'Do "Take out the event insurance" first' }).click();
+    await expect(circle).toContainText("Sorted by your changes");
+    await expect(verdict).toHaveText("No clear deadline");
+
+    await page.getByRole("button", { name: "Use day 35" }).click();
+    await expect(verdict).not.toHaveText("No clear deadline");
+    await expect(page.getByRole("region", { name: "Your changes" })).toContainText(
+      "Deadline: none → day 35",
+    );
+  });
+
+  test("hands a task to someone else by dragging it to their row", async ({ page }) => {
+    await page.goto("/plans/test-fair");
+    const stewards = await page.getByRole("button", { name: /^Find stewards,/ }).boundingBox();
+    const hall = await page.getByRole("button", { name: /^Book the hall,/ }).boundingBox();
+    await page.mouse.move(stewards!.x + 10, stewards!.y + stewards!.height / 2);
+    await page.mouse.down();
+    await page.mouse.move(stewards!.x + 12, hall!.y + hall!.height / 2, { steps: 8 });
+    await expect(page.getByRole("status")).toHaveText('Give "Find stewards" to Ann');
+    await page.mouse.up();
+    await expect(page.getByRole("region", { name: "Your changes" })).toContainText(
+      "Find stewards: owner Bob → Ann",
+    );
+    await expect(page.getByRole("region", { name: "Verdict" }).getByRole("heading")).toHaveText(
+      "Will finish 3 days late",
+    );
+  });
+
+  test("shortens a task by dragging its end", async ({ page }) => {
+    await page.goto("/plans/test-fair");
+    const posters = await page.getByRole("button", { name: /^Print posters,/ }).boundingBox();
+    const perDay = posters!.width / 4;
+    const y = posters!.y + posters!.height / 2;
+    await page.mouse.move(posters!.x + posters!.width - 3, y);
+    await page.mouse.down();
+    await page.mouse.move(posters!.x + posters!.width - 3 - 2 * perDay, y, { steps: 8 });
+    await page.mouse.up();
+    await expect(page.getByRole("region", { name: "Your changes" })).toContainText(
+      "Print posters: 4 → 2 days",
+    );
+    await expect(page.getByRole("region", { name: "Verdict" }).getByRole("heading")).toHaveText(
+      "On time, with 1 day to spare",
+    );
+  });
+
   test("refuses to show a review that fails its checks, and says why", async ({ page }) => {
     await page.goto("/plans/lantern-festival");
     await expect(page.getByRole("heading", { name: "This review can't be shown" })).toBeVisible();
