@@ -79,7 +79,7 @@ describe("compareOutcomes", () => {
     const before = run([t("A", "A", 10), t("B", "B", 10)], 15);
     const after = run([t("A", "A", 5), t("B", "B", 5)], 15);
     expect(compareOutcomes(before, after, 15)).toBe(
-      "Finishes on day 10 instead of day 20, 10 days sooner. Now on time, 5 days to spare.",
+      "Finishes on day 10 instead of day 20, 10 days sooner. Now on time, with 5 days to spare.",
     );
   });
 
@@ -89,7 +89,7 @@ describe("compareOutcomes", () => {
       "Finishes on day 12 instead of day 5, 7 days later. Now 2 days late.",
     );
     expect(compareOutcomes(before, run([t("A", "A", 5)], 10), 10)).toBe(
-      "No change to the end day: still day 5.",
+      "No change: it still finishes on day 5.",
     );
   });
 
@@ -97,10 +97,10 @@ describe("compareOutcomes", () => {
     const before = run([t("A", "A", 1), t("B", "B", 1, null, ["A"])], 5);
     const circle = run([t("A", "A", 1, null, ["B"]), t("B", "B", 1, null, ["A"])], 5);
     expect(compareOutcomes(before, circle, 5)).toBe(
-      "Now cannot be scheduled: some tasks wait on each other in a circle.",
+      "Now it can't be scheduled: some tasks wait for each other.",
     );
     expect(compareOutcomes(circle, before, 5)).toBe(
-      "The circle is broken. Finishes on day 2. On time, 3 days to spare.",
+      "It can be scheduled again. Finishes on day 2. On time, with 3 days to spare.",
     );
   });
 

@@ -103,7 +103,9 @@ describe("PlanWorkspace", () => {
   it("leads with the verdict: how late, and why", () => {
     render(<PlanWorkspace view={view} />);
     const verdict = screen.getByRole("region", { name: "Verdict" });
-    expect(within(verdict).getByRole("heading", { name: "1 day late" })).toBeInTheDocument();
+    expect(
+      within(verdict).getByRole("heading", { name: "Will finish 1 day late" }),
+    ).toBeInTheDocument();
     expect(
       within(verdict).getByText("Ann has 7 days of work and can only do one task at a time."),
     ).toBeInTheDocument();
@@ -112,9 +114,11 @@ describe("PlanWorkspace", () => {
   it("shows where a remark comes from in the plan", async () => {
     const user = userEvent.setup();
     render(<PlanWorkspace view={view} />);
-    const findings = screen.getByRole("region", { name: "What is wrong" });
-    await user.click(within(findings).getAllByRole("button", { name: /show in plan/i })[0]!);
-    const document = screen.getByRole("region", { name: "The plan" });
+    const findings = screen.getByRole("region", { name: "What needs fixing" });
+    await user.click(
+      within(findings).getAllByRole("button", { name: /see this in the plan/i })[0]!,
+    );
+    const document = screen.getByRole("region", { name: "The plan as sent" });
     const active = document.querySelector('mark[data-active="true"]');
     expect(active?.textContent).toBe("Find stewards");
   });
@@ -122,13 +126,13 @@ describe("PlanWorkspace", () => {
   it("lets Nora correct a duration and says what that changes", async () => {
     const user = userEvent.setup();
     render(<PlanWorkspace view={view} />);
-    await user.click(screen.getByRole("button", { name: "Correct the review" }));
+    await user.click(screen.getByRole("button", { name: "Change tasks" }));
     const days = screen.getByRole("spinbutton", { name: "Days for Print posters" });
     await user.clear(days);
     await user.type(days, "2");
     expect(
       await screen.findByText(
-        "Finishes on day 5 instead of day 7, 2 days sooner. Now on time, 1 day to spare.",
+        "Finishes on day 5 instead of day 7, 2 days sooner. Now on time, with 1 day to spare.",
       ),
     ).toBeInTheDocument();
     expect(screen.getByText("Print posters: 4 → 2 days")).toBeInTheDocument();
@@ -138,7 +142,7 @@ describe("PlanWorkspace", () => {
     });
     expect(
       within(screen.getByRole("region", { name: "Verdict" })).getByRole("heading", {
-        name: "On time, 1 day to spare",
+        name: "On time, with 1 day to spare",
       }),
     ).toBeInTheDocument();
   });
@@ -146,7 +150,7 @@ describe("PlanWorkspace", () => {
   it("keeps corrections after a reload and can discard them", async () => {
     const user = userEvent.setup();
     const { unmount } = render(<PlanWorkspace view={view} />);
-    await user.click(screen.getByRole("button", { name: "Correct the review" }));
+    await user.click(screen.getByRole("button", { name: "Change tasks" }));
     // A text input that suggests existing names from a datalist is a combobox.
     const owner = screen.getByRole("combobox", { name: "Owner of Print posters" });
     await user.clear(owner);
@@ -156,11 +160,11 @@ describe("PlanWorkspace", () => {
 
     render(<PlanWorkspace view={view} />);
     expect(await screen.findByText("Print posters: owner Ann → Cat")).toBeInTheDocument();
-    await user.click(screen.getByRole("button", { name: "Discard corrections" }));
+    await user.click(screen.getByRole("button", { name: "Undo all changes" }));
     expect(screen.queryByText("Print posters: owner Ann → Cat")).not.toBeInTheDocument();
     expect(
       within(screen.getByRole("region", { name: "Verdict" })).getByRole("heading", {
-        name: "1 day late",
+        name: "Will finish 1 day late",
       }),
     ).toBeInTheDocument();
   });
@@ -170,10 +174,10 @@ describe("PlanWorkspace", () => {
     const writeText = vi.fn().mockResolvedValue(undefined);
     Object.defineProperty(navigator, "clipboard", { value: { writeText }, configurable: true });
     render(<PlanWorkspace view={view} />);
-    await user.click(screen.getByRole("button", { name: "Copy a reply for the committee" }));
+    await user.click(screen.getByRole("button", { name: "Copy a reply to the committee" }));
     expect(writeText).toHaveBeenCalledOnce();
     const text = writeText.mock.calls[0]![0] as string;
-    expect(text).toContain("1 day late.");
+    expect(text).toContain("Will finish 1 day late.");
     expect(text).toContain('Your plan says: "Find stewards"');
     expect(await screen.findByText("Copied")).toBeInTheDocument();
   });

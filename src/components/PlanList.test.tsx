@@ -48,12 +48,30 @@ describe("PlanList", () => {
       "href",
       "/plans/spring",
     );
-    expect(screen.getByText("On time, 3 days to spare")).toBeInTheDocument();
+    expect(screen.getByText("On time, with 3 days to spare")).toBeInTheDocument();
     expect(screen.getByText("7 days late")).toBeInTheDocument();
-    expect(screen.getByText("Blocked: tasks wait on each other")).toBeInTheDocument();
+    expect(screen.getByText("Can't be scheduled")).toBeInTheDocument();
     expect(screen.getByText("Not reviewed yet")).toBeInTheDocument();
     expect(
-      screen.getByText("4 plans · 1 on time · 2 need attention · 1 not reviewed"),
+      screen.getByText("4 plans: 1 on time, 2 need attention, 1 not reviewed."),
+    ).toBeInTheDocument();
+  });
+
+  it("gives the key dates in words", () => {
+    render(
+      <PlanList
+        plans={[
+          plan("lantern", "Lantern Festival", {
+            status: "late",
+            end_day: 52,
+            deadline_day: 45,
+            days_late: 7,
+          }),
+        ]}
+      />,
+    );
+    expect(
+      screen.getByText("Deadline: day 45 · Earliest finish: day 52 · 8 tasks"),
     ).toBeInTheDocument();
   });
 
