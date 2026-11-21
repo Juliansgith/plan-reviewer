@@ -1,5 +1,10 @@
 // ./review <plan.md> <out.json>
 //
+// With OPENROUTER_API_KEY it calls the model itself. Without one, but with
+// REVIEW_API_URL and REVIEW_API_TOKEN, it asks a review server that holds the
+// key (D20), and checks the review it gets back against the plan before
+// writing it, as the page does with stored reviews.
+//
 // Exit codes (docs/contracts.md: "When ./review cannot produce a review, it
 // exits with a non-zero status. We then do not read the output file."):
 //   0  review written
@@ -10,9 +15,17 @@
 
 import { mkdirSync, readFileSync, renameSync, rmSync, writeFileSync } from "node:fs";
 import { dirname } from "node:path";
+import { parseReview } from "../core/contracts";
 import { DEFAULT_BUDGET_MS, reviewPlan } from "../core/review/review";
-import { ModelServiceError, REASONING_LEVELS, type Reasoning } from "../core/review/types";
+import {
+  ModelServiceError,
+  REASONING_LEVELS,
+  type Reasoning,
+  type StoredReview,
+} from "../core/review/types";
+import { checkReviewAgainstPlan } from "../core/review/verify";
 import { DEFAULT_MODEL, OpenRouterClient } from "./openrouter";
+import { requestRemoteReview, reviewEndpoint } from "./remote-review";
 
 export type CommandIo = {
   stderr: (line: string) => void;
@@ -24,11 +37,15 @@ const USAGE = `Usage: ./review <plan.md> <out.json>
 
 Reviews an event plan with a model and writes the review as JSON.
 
-Environment:
-  OPENROUTER_API_KEY      required; get one at https://openrouter.ai/keys
+Environment, either your own model key:
+  OPENROUTER_API_KEY      get one at https://openrouter.ai/keys
   REVIEW_MODEL            optional; default ${DEFAULT_MODEL}
-  REVIEW_TIMEOUT_SECONDS  optional; default ${DEFAULT_BUDGET_MS / 1000}
   REVIEW_REASONING        optional; off (default), low, medium or high
+or a review server that holds the key (used only without OPENROUTER_API_KEY):
+  REVIEW_API_URL          the server, for example https://reviews.example.org
+  REVIEW_API_TOKEN        the token the server's owner gave you
+and for both:
+  REVIEW_TIMEOUT_SECONDS  optional; default ${DEFAULT_BUDGET_MS / 1000}
 
 Exit codes: 0 written, 1 no usable review, 2 usage or setup problem,
 3 model service problem. No file is written unless the exit code is 0.`;
@@ -63,9 +80,12 @@ export async function runReviewCommand(
   }
 
   const apiKey = env.OPENROUTER_API_KEY?.trim();
-  if (!apiKey) {
+  const server = env.REVIEW_API_URL?.trim();
+  const token = env.REVIEW_API_TOKEN?.trim();
+  if (!apiKey && !(server && token)) {
     io.stderr(
-      "OPENROUTER_API_KEY is not set. Get a key at https://openrouter.ai/keys and export it.",
+      "No model access. Set OPENROUTER_API_KEY (get a key at https://openrouter.ai/keys), " +
+        "or set REVIEW_API_URL and REVIEW_API_TOKEN to use a review server.",
     );
     return 2;
   }
@@ -78,6 +98,15 @@ export async function runReviewCommand(
   const seconds = Number(env.REVIEW_TIMEOUT_SECONDS);
   const budgetMs =
     Number.isFinite(seconds) && seconds >= 10 ? Math.min(seconds, 3600) * 1000 : DEFAULT_BUDGET_MS;
+
+  if (!apiKey) {
+    return reviewOnServer(plan, planPath, outPath, {
+      server: server!,
+      token: token!,
+      timeoutMs: budgetMs,
+      io,
+    });
+  }
 
   const client = new OpenRouterClient({
     apiKey,
@@ -117,7 +146,47 @@ export async function runReviewCommand(
     return 1;
   }
 
-  const { review } = outcome;
+  return writeReview(outcome.review, outPath, io);
+}
+
+async function reviewOnServer(
+  plan: string,
+  planPath: string,
+  outPath: string,
+  options: { server: string; token: string; timeoutMs: number; io: CommandIo },
+): Promise<number> {
+  const { io } = options;
+  const endpoint = reviewEndpoint(options.server);
+  if (typeof endpoint === "string") {
+    io.stderr(endpoint);
+    return 2;
+  }
+  io.stderr(`Reviewing ${planPath} on the review server ${endpoint.host} ...`);
+  const result = await requestRemoteReview(plan, {
+    endpoint,
+    token: options.token,
+    fetch: io.fetch ?? fetch,
+    timeoutMs: options.timeoutMs,
+  });
+  if (!result.ok) {
+    for (const line of result.lines) io.stderr(line);
+    return result.exit;
+  }
+
+  // The server is trusted no more than the model: check before writing.
+  const parsed = parseReview(result.review);
+  const problems = parsed.ok
+    ? checkReviewAgainstPlan(plan, parsed.value)
+    : parsed.errors.map((e) => `It breaks the contract: ${e}`);
+  if (problems.length) {
+    io.stderr("The review server's answer failed the checks, so nothing was written:");
+    for (const problem of problems) io.stderr(`  - ${problem}`);
+    return 1;
+  }
+  return writeReview(result.review as StoredReview, outPath, io);
+}
+
+function writeReview(review: StoredReview, outPath: string, io: CommandIo): number {
   const temporary = `${outPath}.${process.pid}.tmp`;
   try {
     mkdirSync(dirname(outPath), { recursive: true });
@@ -130,11 +199,13 @@ export async function runReviewCommand(
   }
 
   const blockers = review.findings.filter((finding) => finding.severity === "blocker").length;
-  const cost = review.meta.cost_usd === null ? "" : `, cost $${review.meta.cost_usd.toFixed(4)}`;
+  const meta = review.meta as Partial<StoredReview["meta"]> | undefined;
+  const calls = meta?.attempts;
+  const cost = typeof meta?.cost_usd === "number" ? `, cost $${meta.cost_usd.toFixed(4)}` : "";
   io.stderr(
     `Wrote ${outPath}: ${count(review.tasks.length, "task")}, ${count(review.findings.length, "finding")} (${count(blockers, "blocker")}), ` +
-      `deadline ${review.deadline_day === null ? "not clear" : `day ${review.deadline_day}`}, ` +
-      `${review.meta.attempts} model call${review.meta.attempts === 1 ? "" : "s"}${cost}.`,
+      `deadline ${review.deadline_day === null ? "not clear" : `day ${review.deadline_day}`}` +
+      `${calls ? `, ${count(calls, "model call")}` : ""}${cost}.`,
   );
   return 0;
 }

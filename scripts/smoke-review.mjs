@@ -1,11 +1,14 @@
 // Smoke test for ./review that needs no test framework, so it also runs on
 // Node 20, the oldest version the brief promises. It starts a stand-in for
 // OpenRouter, runs the real ./review script, and checks the output with the
-// graders' check_contract.py.
+// graders' check_contract.py. Then it does the same through the review
+// endpoint (D20): ./review with no model key of its own, a token, and the
+// endpoint holding the (stand-in) key.
 //
 //   node scripts/smoke-review.mjs
 
 import { spawnSync, spawn } from "node:child_process";
+import { createHash } from "node:crypto";
 import { mkdtempSync, readFileSync, existsSync, rmSync } from "node:fs";
 import { createServer } from "node:http";
 import { tmpdir } from "node:os";
@@ -68,6 +71,62 @@ try {
     child.on("exit", (exitCode) => resolve(exitCode));
   });
   check("./review exits 2 without a key and writes nothing", refused === 2 && !existsSync(noKey));
+
+  // Through the review endpoint, with a token instead of a key.
+  const token = "smoke-review-token";
+  const endpoint = spawn(
+    process.execPath,
+    ["node_modules/tsx/dist/cli.mjs", "scripts/serve-review-endpoint.ts"],
+    {
+      env: {
+        ...process.env,
+        PORT: "0",
+        OPENROUTER_API_KEY: "sk-or-smoke",
+        OPENROUTER_BASE_URL: base,
+        REVIEW_API_TOKEN_SHA256: createHash("sha256").update(token).digest("hex"),
+      },
+      stdio: ["ignore", "pipe", "inherit"],
+    },
+  );
+  let output = "";
+  const port = await new Promise((resolve, reject) => {
+    endpoint.stdout.on("data", (chunk) => {
+      output += chunk;
+      const match = /listening (\d+)/.exec(output);
+      if (match) resolve(match[1]);
+    });
+    endpoint.on("exit", () => reject(new Error("the review endpoint did not start")));
+  });
+  try {
+    const viaServer = join(dir, "via-server.json");
+    const remote = { ...env, REVIEW_API_URL: `http://127.0.0.1:${port}` };
+    const served = await run(["data/plans/spring-market.md", viaServer], {
+      ...remote,
+      REVIEW_API_TOKEN: token,
+      OPENROUTER_API_KEY: "",
+    });
+    check("./review through the endpoint exits 0", served === 0 && existsSync(viaServer));
+    if (python && existsSync(viaServer)) {
+      check(
+        "check_contract.py passes the endpoint's review",
+        spawnSync(python, ["check_contract.py", "review", viaServer]).status === 0,
+      );
+    }
+    const wrong = join(dir, "wrong-token.json");
+    const denied = await run(["data/plans/spring-market.md", wrong], {
+      ...remote,
+      REVIEW_API_TOKEN: "not-the-token",
+      OPENROUTER_API_KEY: "",
+    });
+    check("a wrong token exits 2 and writes nothing", denied === 2 && !existsSync(wrong));
+    const audit = output.split("\n").filter((line) => line.includes("review_request"));
+    check(
+      "the endpoint wrote audit lines without the token",
+      audit.length === 2 && !output.includes(token),
+    );
+  } finally {
+    endpoint.kill();
+  }
 } finally {
   server.close();
   rmSync(dir, { recursive: true, force: true });

@@ -10,12 +10,9 @@
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { parseReview, type ReviewTask } from "../core/contracts";
-import {
-  findDeadlineStatements,
-  findInstructionsToReviewer,
-  quoteStatesDay,
-} from "../core/review/signals";
+import { findDeadlineStatements } from "../core/review/signals";
 import type { FindingKind, ReviewFinding, Severity, StoredReview } from "../core/review/types";
+import { checkReviewAgainstPlan } from "../core/review/verify";
 import { scheduleTasks } from "../core/schedule/schedule";
 import type { ScheduleResult } from "../core/schedule/types";
 import { locateQuote, type Span } from "../core/text";
@@ -70,8 +67,6 @@ const KINDS = new Set<FindingKind>([
   "owner_names",
 ]);
 
-const short = (text: string) => (text.length > 80 ? `${text.slice(0, 77)}...` : text);
-
 function readReview(file: string, plan: string): { review: ViewReview | null; problems: string[] } {
   if (!existsSync(file)) {
     return {
@@ -96,38 +91,9 @@ function readReview(file: string, plan: string): { review: ViewReview | null; pr
     };
   const stored = parsed.value;
 
-  const problems: string[] = [];
-  for (const task of stored.tasks) {
-    if (!locateQuote(plan, task.quote))
-      problems.push(`Task ${task.id}: the quote "${short(task.quote)}" is not in the plan.`);
-  }
-  stored.findings.forEach((finding, i) => {
-    if (finding.quote !== null && !locateQuote(plan, finding.quote)) {
-      problems.push(`Finding ${i + 1}: the quote "${short(finding.quote)}" is not in the plan.`);
-    }
-  });
-
-  const deadlineQuote = typeof stored.deadline_quote === "string" ? stored.deadline_quote : null;
-  if (stored.deadline_day !== null) {
-    const statements = findDeadlineStatements(plan);
-    const stated = statements.some((s) => s.day === stored.deadline_day);
-    const quoteSpan = deadlineQuote ? locateQuote(plan, deadlineQuote) : null;
-    const quoted =
-      !!quoteSpan &&
-      quoteStatesDay(deadlineQuote!, stored.deadline_day) &&
-      !findInstructionsToReviewer(plan).some(
-        (i) => i.start < quoteSpan.end && quoteSpan.start < i.end,
-      );
-    if (!stated && !quoted) {
-      const days = [...new Set(statements.map((s) => s.day))];
-      problems.push(
-        `The review's deadline, day ${stored.deadline_day}, is not a deadline the plan states${
-          days.length ? ` (the plan states ${days.map((d) => `day ${d}`).join(" and ")})` : ""
-        }.`,
-      );
-    }
-  }
+  const problems = checkReviewAgainstPlan(plan, stored);
   if (problems.length) return { review: null, problems };
+  const deadlineQuote = typeof stored.deadline_quote === "string" ? stored.deadline_quote : null;
 
   const findings: ReviewFinding[] = stored.findings.map((finding) => ({
     title: finding.title,

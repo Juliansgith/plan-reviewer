@@ -42,7 +42,7 @@ The checks I relied on: property tests against an independent brute-force solver
 
 ## Environment variables my review command needs
 
-- `OPENROUTER_API_KEY` (required).
+- `OPENROUTER_API_KEY`, or, without a key of your own, `REVIEW_API_URL` and `REVIEW_API_TOKEN` (both in the email): `./review` then sends the plan to my server, which holds the key, and checks the review it gets back against the plan before writing it ([D20](docs/DECISIONS.md), controls in [docs/SECURITY.md](docs/SECURITY.md)).
 - `REVIEW_MODEL` (optional, default `deepseek/deepseek-v4.1-flash-1017`, chosen for low cost and strict structured outputs, pinned to a snapshot; [D5](docs/DECISIONS.md)).
 - `REVIEW_TIMEOUT_SECONDS` (optional, default 270).
 - `REVIEW_REASONING` (optional, default `off`; `low`, `medium` or `high`).

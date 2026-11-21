@@ -31,15 +31,21 @@ export OPENROUTER_API_KEY=sk-or-...      # or put it in .env (see .env.example) 
 ./review data/plans/spring-market.md out/spring-market.json
 ```
 
+No OpenRouter key? Set `REVIEW_API_URL` and `REVIEW_API_TOKEN` instead (the token comes from the server's owner). `./review` then sends the plan to that server, which runs the same review with its own key, and checks the answer against the plan before writing it ([D20](docs/DECISIONS.md), [docs/SECURITY.md](docs/SECURITY.md)).
+
 `./review` exits 0 when it wrote a verified review, 1 when the model gave no usable answer after three attempts, 2 for a usage or setup problem (arguments, plan file, API key), and 3 when OpenRouter is unavailable or out of credit. It writes nothing unless it exits 0. Run `./review --help` for details. On Windows without a POSIX shell, `npm run review -- <plan.md> <out.json>` does the same.
 
 | Variable                 | Needed | Default                             | Purpose                                                                                                    |
 | ------------------------ | ------ | ----------------------------------- | ---------------------------------------------------------------------------------------------------------- |
-| `OPENROUTER_API_KEY`     | yes    |                                     | OpenRouter key                                                                                             |
+| `OPENROUTER_API_KEY`     | yes¹   |                                     | OpenRouter key                                                                                             |
+| `REVIEW_API_URL`         | no¹    |                                     | A review server that holds a key, used only without `OPENROUTER_API_KEY`; must be `https://`               |
+| `REVIEW_API_TOKEN`       | no¹    |                                     | The token for that server                                                                                  |
 | `REVIEW_MODEL`           | no     | `deepseek/deepseek-v4.1-flash-1017` | Any OpenRouter model that supports structured outputs                                                      |
 | `REVIEW_TIMEOUT_SECONDS` | no     | `270`                               | Total time budget, including repair rounds                                                                 |
 | `REVIEW_REASONING`       | no     | `off`                               | `low`, `medium` or `high` turn on model reasoning; off is faster and more reliable (docs/DECISIONS.md, D5) |
 | `OPENROUTER_BASE_URL`    | no     | `https://openrouter.ai/api/v1`      | For tests and proxies                                                                                      |
+
+¹ Either `OPENROUTER_API_KEY`, or both `REVIEW_API_URL` and `REVIEW_API_TOKEN`.
 
 The stored reviews in `data/reviews/` are what `./review` wrote, unedited. The page re-checks each one when it loads it and refuses to show one whose quotes or deadline are not in the plan.
 
@@ -78,6 +84,7 @@ The image runs the standalone server as the unprivileged `node` user, works with
 ## API
 
 - `POST /api/schedule`: the contract endpoint. At most 60 tasks, answers well within 10 seconds. Bad input gets a JSON 4xx: 400 broken JSON, 413 too large, 422 contract errors with every problem listed. Answers carry extra fields the contract allows: `proof` (lower bound, its reason, whether the end day is proven optimal) and `critical_path`.
+- `POST /api/review`: `{ "plan": "<markdown>" }` with `Authorization: Bearer <token>` returns `{ "review": ... }`, made by the same pipeline as `./review` with the server's key. Off unless the server is configured; 401 without a valid token; 429 at its limits. Controls: [docs/SECURITY.md](docs/SECURITY.md).
 - `GET /api/plans`, `GET /api/plans/:id`: plans with their verified reviews, quote positions and schedules.
 - `GET /api/health`.
 
