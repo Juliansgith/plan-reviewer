@@ -249,10 +249,10 @@ export function PlanWorkspace({ view }: { view: PlanView }) {
         tabIndex={0}
         aria-label="The plan, with quoted passages marked"
       >
-        <section aria-label="The plan" className={`${styles.card} ${styles.planCard}`}>
-          <h2 className={styles.label}>The plan</h2>
+        <section aria-label="The plan as sent" className={`${styles.card} ${styles.planCard}`}>
+          <h2 className={styles.sectionTitle}>The plan as sent</h2>
           <p className={styles.sectionMeta}>
-            Marked passages are quoted by the review. Click one to see the remark.
+            Highlighted words are quoted in the remarks. Click them to go to the remark.
           </p>
           <PlanDocument
             text={view.text}

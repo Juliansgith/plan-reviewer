@@ -33,7 +33,7 @@ export function Timeline({ schedule, tasks, deadline, active, onSelect }: Props)
       aria-label={`Schedule by person, from day 0 to day ${schedule.end_day}${deadline === null ? "" : `; deadline day ${deadline}`}`}
     >
       <div className={styles.timelineAxis} aria-hidden="true">
-        <span />
+        <span className={styles.axisLabel}>Day</span>
         <div className={styles.track}>
           {ticks.map((day) => (
             <span key={day} className={styles.tick} style={{ left: pct(day) }}>
@@ -86,10 +86,10 @@ export function Timeline({ schedule, tasks, deadline, active, onSelect }: Props)
         </div>
       ))}
       <p className={styles.legend} aria-hidden="true">
-        <span className={styles.legendCritical} /> Sets the end day
+        <span className={styles.legendCritical} /> Green tasks decide the finish date
         {deadline !== null && (
           <>
-            <span className={styles.legendDeadline} /> Deadline, day {deadline}
+            <span className={styles.legendDeadline} /> Dashed line: the deadline, day {deadline}
           </>
         )}
       </p>

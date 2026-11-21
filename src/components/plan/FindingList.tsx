@@ -18,10 +18,12 @@ type Props = {
 };
 
 const GROUPS: { severity: Severity; title: string }[] = [
-  { severity: "blocker", title: "Must change before sign-off" },
-  { severity: "warning", title: "Should be fixed or clarified" },
-  { severity: "note", title: "Minor notes" },
+  { severity: "blocker", title: "Must be fixed before you approve" },
+  { severity: "warning", title: "Should be fixed or checked" },
+  { severity: "note", title: "Small points" },
 ];
+
+const countText = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
 
 export function FindingList(props: Props) {
   const { findings, spans, active, corrected, onShow } = props;
@@ -37,42 +39,45 @@ export function FindingList(props: Props) {
       <li
         key={id}
         id={`finding-${index}`}
-        className={`${styles.finding} ${active === id ? styles.findingActive : ""}`}
+        className={`${styles.finding} ${finding.severity === "blocker" ? styles.findingBlocker : ""} ${active === id ? styles.findingActive : ""}`}
       >
         <div className={styles.findingHead}>
-          <span className={styles.findingTitle}>{finding.title}</span>
-          {finding.severity === "blocker" && <Chip tone="bad">Must change</Chip>}
+          <h4 className={styles.findingTitle}>{finding.title}</h4>
+          {finding.severity === "blocker" && <Chip tone="bad">Must fix</Chip>}
         </div>
         <p className={styles.findingDetail}>{finding.detail}</p>
         {finding.quote && (
-          <blockquote className={styles.quote}>
-            <span>“{finding.quote}”</span>
+          <div className={styles.quoteBox}>
+            <p className={styles.quoteLabel}>The plan says:</p>
+            <blockquote className={styles.quote}>“{finding.quote}”</blockquote>
             {spans[index] && (
-              <button type="button" className={styles.quiet} onClick={() => onShow(id)}>
-                <Icon name="locate" />
-                Show in plan
+              <button type="button" className={styles.secondary} onClick={() => onShow(id)}>
+                <Icon name="locate" size={18} />
+                See this in the plan
               </button>
             )}
-          </blockquote>
+          </div>
         )}
-        <p className={styles.findingMeta}>
-          {finding.source === "code" ? "Checked by code" : "From the model's review"}
-          {finding.quote_removed && " · The model's quote was not in the plan, so it was removed"}
-          {stale && " · Based on the review, before your corrections"}
-        </p>
+        {(finding.source === "code" || finding.quote_removed || stale) && (
+          <p className={styles.findingMeta}>
+            {finding.source === "code" && "Checked automatically."}
+            {finding.quote_removed &&
+              " The quote could not be found in the plan, so it is not shown."}
+            {stale && " This was worked out before your changes."}
+          </p>
+        )}
       </li>
     );
   };
 
   return (
-    <section aria-label="What is wrong" className={styles.section}>
-      <div className={styles.sectionHead}>
-        <h2 className={styles.label}>What is wrong</h2>
-        <span className={styles.sectionMeta}>
-          {counts[0]} must change · {counts[1]} should be fixed · {counts[2]} minor
-        </span>
-      </div>
-      {findings.length === 0 && <p className={styles.muted}>Nothing to report.</p>}
+    <section aria-label="What needs fixing" className={styles.section}>
+      <h2 className={styles.sectionTitle}>What needs fixing</h2>
+      <p className={styles.sectionIntro}>
+        {findings.length === 0
+          ? "Nothing needs fixing."
+          : `${countText(counts[0]!, "thing must", "things must")} be fixed, ${countText(counts[1]!, "thing", "things")} should be, and ${countText(counts[2]!, "small point", "small points")}.`}
+      </p>
       {GROUPS.slice(0, 2).map(({ severity, title }) => {
         const items = indexed.filter((f) => f.finding.severity === severity);
         if (!items.length) return null;
@@ -85,7 +90,7 @@ export function FindingList(props: Props) {
       })}
       {counts[2]! > 0 && (
         <details className={styles.group}>
-          <summary className={styles.groupTitle}>
+          <summary className={styles.groupSummary}>
             {GROUPS[2]!.title} ({counts[2]})
           </summary>
           <ul className={styles.findings}>
@@ -94,17 +99,20 @@ export function FindingList(props: Props) {
         </details>
       )}
       <div className={styles.reply}>
-        <button type="button" className={styles.action} onClick={props.onCopyReply}>
-          <Icon name="copy" />
-          Copy a reply for the committee
+        <button type="button" className={styles.primary} onClick={props.onCopyReply}>
+          <Icon name="copy" size={18} />
+          Copy a reply to the committee
         </button>
-        <span aria-live="polite" className={styles.sectionMeta}>
+        <span aria-live="polite" className={styles.copied}>
           {props.copyState === "copied" ? "Copied" : ""}
         </span>
       </div>
+      <p className={styles.hintSmall}>
+        The reply lists what must and should be fixed, quoting the committee&apos;s own words.
+      </p>
       {props.copyState === "failed" && (
         <label className={styles.replyFallback}>
-          Copying is blocked in this browser. Select the text and copy it:
+          Copying is blocked in this browser. Select the text below and copy it:
           <textarea
             readOnly
             value={props.replyText}

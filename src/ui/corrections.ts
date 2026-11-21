@@ -78,24 +78,23 @@ function standing(end: number, deadline: number, before: number | null): string 
   return `${prefix}, ${spareText(deadline - end)}.`;
 }
 
-/** One or two sentences on what the correction did to the end day. */
+/** One or two sentences on what the change did to the finish day. */
 export function compareOutcomes(
   before: ScheduleResult,
   after: ScheduleResult,
   deadline: number | null,
 ): string {
-  const circle = "some tasks wait on each other in a circle.";
   if (after.status === "cycle") {
     return before.status === "cycle"
-      ? `Still cannot be scheduled: ${circle}`
-      : `Now cannot be scheduled: ${circle}`;
+      ? "Still can't be scheduled: some tasks wait for each other."
+      : "Now it can't be scheduled: some tasks wait for each other.";
   }
   if (before.status === "cycle") {
     const status = deadline === null ? "" : ` ${standing(after.end_day, deadline, null)}`;
-    return `The circle is broken. Finishes on day ${after.end_day}.${status}`;
+    return `It can be scheduled again. Finishes on day ${after.end_day}.${status}`;
   }
   if (after.end_day === before.end_day)
-    return `No change to the end day: still day ${after.end_day}.`;
+    return `No change: it still finishes on day ${after.end_day}.`;
   const difference = after.end_day - before.end_day;
   const direction = difference < 0 ? "sooner" : "later";
   const status = deadline === null ? "" : ` ${standing(after.end_day, deadline, before.end_day)}`;

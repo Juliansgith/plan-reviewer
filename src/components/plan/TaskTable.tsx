@@ -83,10 +83,10 @@ export function TaskTable({
             </th>
             <th scope="col">Waits for</th>
             <th scope="col" className={styles.num}>
-              Start
+              Starts on day
             </th>
             <th scope="col" className={styles.num}>
-              End
+              Ends on day
             </th>
             {editing && (
               <th scope="col">

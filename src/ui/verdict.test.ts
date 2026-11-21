@@ -41,6 +41,7 @@ describe("describeVerdict", () => {
       headline: "Will finish 3 days late",
       sentence: "The earliest it can all be done is day 10. The deadline is day 7.",
       reason: "Ruth has 10 days of work and can only do one task at a time.",
+      reasonLabel: "Why",
       proof: "We tried every possible order of the tasks. None finishes sooner.",
     });
   });
@@ -76,6 +77,7 @@ describe("describeVerdict", () => {
       sentence:
         '"Approve course" waits for "Insurance", and "Insurance" waits for "Approve course", so neither can start.',
       reason: "Ask the committee which of these should happen first.",
+      reasonLabel: "What to do",
     });
   });
 
@@ -100,6 +102,10 @@ describe("describeVerdict", () => {
       reason:
         "The earliest it can all be done is day 33: 3 days late for day 30, and on time for day 35.",
     });
+  });
+
+  it("labels the comparison against several deadlines as neither a cause nor an action", () => {
+    expect(verdict([t("A", "Hall", 33)], null, [30, 35]).reasonLabel).toBeNull();
   });
 
   it("still gives the earliest finish when the plan gives no deadline at all", () => {

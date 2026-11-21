@@ -6,12 +6,14 @@ import styles from "./plan.module.css";
 
 type Props = {
   verdict: VerdictCopy;
-  /** The review's own verdict, shown when corrections change it. */
+  /** The review's own verdict, shown when changes alter it. */
   reviewVerdict: VerdictCopy | null;
   canShowDeadline: boolean;
   onShowDeadline: () => void;
   pending: boolean;
 };
+
+const ICONS = { good: "ok", bad: "alert", neutral: "info" } as const;
 
 export function VerdictPanel({
   verdict,
@@ -21,33 +23,36 @@ export function VerdictPanel({
   pending,
 }: Props) {
   return (
-    <section
-      aria-label="Verdict"
-      className={`${styles.card} ${styles.verdict} ${styles[`tone_${verdict.tone}`]}`}
-    >
-      <p className={styles.label}>{reviewVerdict ? "Verdict with your corrections" : "Verdict"}</p>
-      <h2 className={styles.headline}>{verdict.headline}</h2>
+    <section aria-label="Verdict" className={`${styles.verdict} ${styles[`tone_${verdict.tone}`]}`}>
+      <p className={styles.eyebrow}>
+        {reviewVerdict ? "With your changes" : "Can this plan be done by its deadline?"}
+      </p>
+      <h2 className={styles.headline}>
+        <span className={styles.headlineIcon}>
+          <Icon name={ICONS[verdict.tone]} size={30} />
+        </span>
+        {verdict.headline}
+      </h2>
       <p className={styles.sentence}>{verdict.sentence}</p>
-      {verdict.reason && <p className={styles.reason}>{verdict.reason}</p>}
-      <div className={styles.verdictFoot}>
-        {verdict.proof && (
-          <span className={styles.proof}>
-            <Icon name="check" />
-            {verdict.proof}
-          </span>
-        )}
-        {canShowDeadline && (
-          <button type="button" className={styles.quiet} onClick={onShowDeadline}>
-            <Icon name="locate" />
-            Where the plan states the deadline
-          </button>
-        )}
-      </div>
+      {verdict.reason && (
+        <p className={styles.reason}>
+          {verdict.reasonLabel && <strong>{verdict.reasonLabel}: </strong>}
+          {verdict.reason}
+        </p>
+      )}
+      {verdict.proof && <p className={styles.proof}>{verdict.proof}</p>}
+      <p className={styles.hint}>Days are counted from the committee&apos;s kickoff meeting.</p>
+      {canShowDeadline && (
+        <button type="button" className={styles.secondary} onClick={onShowDeadline}>
+          <Icon name="locate" size={18} />
+          Show where the plan gives the deadline
+        </button>
+      )}
       {reviewVerdict && (
-        <p className={styles.was}>The review alone says: {reviewVerdict.headline.toLowerCase()}.</p>
+        <p className={styles.was}>Without your changes: {reviewVerdict.headline.toLowerCase()}.</p>
       )}
       <p className="visually-hidden" aria-live="polite">
-        {pending ? "Working out the new schedule." : ""}
+        {pending ? "Working out the new dates." : ""}
       </p>
     </section>
   );

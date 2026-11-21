@@ -26,15 +26,15 @@ function ReviewProblems({ view }: { view: PlanView }) {
       className={`${styles.problem} ${notReviewed ? styles.neutral : ""}`}
       aria-label="Review status"
     >
-      <p className={styles.label}>{notReviewed ? "Not reviewed" : "Review not shown"}</p>
-      <h2>
-        {notReviewed
-          ? "This plan has not been reviewed yet"
-          : "The stored review failed its checks"}
-      </h2>
-      {!notReviewed && (
+      <h2>{notReviewed ? "This plan has not been reviewed yet" : "This review can't be shown"}</h2>
+      {notReviewed ? (
+        <p>There is no review for this plan yet, so there is no verdict to show.</p>
+      ) : (
         <>
-          <p>It is not shown, because these problems mean it cannot be trusted:</p>
+          <p>
+            The saved review didn&apos;t pass its checks, so it might be wrong. These are the
+            problems:
+          </p>
           <ul>
             {view.problems.map((problem) => (
               <li key={problem}>{problem}</li>
@@ -42,8 +42,8 @@ function ReviewProblems({ view }: { view: PlanView }) {
           </ul>
         </>
       )}
-      <p>
-        Create a review with{" "}
+      <p className={styles.small}>
+        To make a new review, run{" "}
         <code>
           ./review data/plans/{view.id}.md data/reviews/{view.id}.json
         </code>
@@ -61,12 +61,12 @@ export default async function PlanPage({ params }: Props) {
     ? [
         plural(view.review.tasks.length, "task"),
         view.review.meta
-          ? `reviewed ${formatStamp(view.review.meta.generated_at)} by ${view.review.meta.model}`
-          : "reviewed elsewhere",
+          ? `Reviewed ${formatStamp(view.review.meta.generated_at)}`
+          : "Reviewed elsewhere",
       ].join(" · ")
     : view.verdict.status === "review_invalid"
-      ? "The stored review failed its checks"
-      : "Not reviewed";
+      ? "The saved review didn't pass its checks"
+      : "Not reviewed yet";
 
   return (
     <>
@@ -74,8 +74,8 @@ export default async function PlanPage({ params }: Props) {
       <main className={styles.page}>
         <nav aria-label="Breadcrumb" className={styles.crumbs}>
           <Link href="/">
-            <Icon name="back" />
-            Event plans
+            <Icon name="back" size={18} />
+            All plans
           </Link>
         </nav>
         <h1>{view.title}</h1>
@@ -85,8 +85,8 @@ export default async function PlanPage({ params }: Props) {
         ) : (
           <>
             <ReviewProblems view={view} />
-            <section className={styles.document} aria-label="The plan">
-              <p className={styles.label}>The plan</p>
+            <section className={styles.document} aria-label="The plan as sent">
+              <h2 className={styles.docTitle}>The plan as sent</h2>
               <PlainPlanDocument text={view.text} />
             </section>
           </>

@@ -13,6 +13,8 @@ export type VerdictCopy = {
   headline: string;
   sentence: string;
   reason: string | null;
+  /** What the reason is: a cause ("Why"), an action ("What to do"), or plain (null). */
+  reasonLabel: "Why" | "What to do" | null;
   proof: string | null;
 };
 
@@ -28,7 +30,7 @@ export function listDays(values: readonly number[]): string {
 }
 
 export function spareText(spare: number): string {
-  return spare > 0 ? `${days(spare)} to spare` : "with no days to spare";
+  return spare > 0 ? `with ${days(spare)} to spare` : "with no days to spare";
 }
 
 function reasonOf(
@@ -60,31 +62,33 @@ export function describeVerdict(input: {
 
   if (schedule.status === "cycle") {
     const cycle = schedule.cycle.map((id) => quoted(names.get(id) ?? id));
-    const sentence =
-      cycle.length === 1
-        ? `${cycle[0]} waits for itself.`
-        : `${cycle[0]} waits for ${cycle
-            .slice(1)
-            .map((name, i) => (i === 0 ? name : `which waits for ${name}`))
-            .join(", ")}, which waits for ${cycle[0]}.`;
+    let sentence: string;
+    if (cycle.length === 1) sentence = `${cycle[0]} waits for itself, so it can never start.`;
+    else if (cycle.length === 2)
+      sentence = `${cycle[0]} waits for ${cycle[1]}, and ${cycle[1]} waits for ${cycle[0]}, so neither can start.`;
+    else
+      sentence = `${cycle[0]} waits for ${cycle
+        .slice(1)
+        .map((name, i) => (i === 0 ? name : `which waits for ${name}`))
+        .join(", ")}, which waits for ${cycle[0]}, so none of them can start.`;
     return {
       tone: "bad",
-      label: "Blocked",
-      headline: "Cannot be scheduled",
+      label: "Can't be scheduled",
+      headline: "Can't be scheduled",
       sentence,
-      reason:
-        "Tasks that wait on each other in a circle can never start. The committee needs to say which comes first.",
+      reason: "Ask the committee which of these should happen first.",
+      reasonLabel: "What to do",
       proof: null,
     };
   }
 
   const { end_day, proof } = schedule;
-  const finish = proof.optimal
-    ? `The earliest the work can finish is day ${end_day}.`
-    : `The best schedule found finishes on day ${end_day}.`;
+  const earliest = proof.optimal
+    ? `The earliest it can all be done is day ${end_day}.`
+    : `The best order found finishes on day ${end_day}.`;
   const proofText = proof.optimal
-    ? "Checked: no order of the tasks finishes sooner."
-    : `Best found within the time limit. No order of the tasks can finish before day ${proof.lower_bound}.`;
+    ? "We tried every possible order of the tasks. None finishes sooner."
+    : `This is the best order found in the time available. Nothing can finish before day ${proof.lower_bound}.`;
 
   if (deadline_day === null) {
     const candidates = [...new Set(input.deadline_candidates)].sort((a, b) => a - b);
@@ -94,47 +98,45 @@ export function describeVerdict(input: {
         : candidates.length === 1
           ? `The plan mentions day ${candidates[0]}, but not clearly as the deadline.`
           : "The plan does not say by which day everything must be done.";
-    const reason = candidates.length
-      ? candidates
-          .map((day) =>
-            end_day > day
-              ? `Against day ${day} it is ${days(end_day - day)} late.`
-              : `Against day ${day} it is on time.`,
-          )
-          .join(" ")
-      : null;
+    const comparisons = candidates.map((day) =>
+      end_day > day ? `${days(end_day - day)} late for day ${day}` : `on time for day ${day}`,
+    );
+    const finish = `The earliest it can all be done is day ${end_day}`;
+    const reason = comparisons.length
+      ? `${finish}: ${comparisons.length > 1 ? `${comparisons.slice(0, -1).join(", ")}, and ${comparisons.at(-1)}` : comparisons[0]}.`
+      : `${finish}.`;
     return {
       tone: "neutral",
       label: "No clear deadline",
-      headline: `Earliest finish: day ${end_day}`,
+      headline: "No clear deadline",
       sentence,
       reason,
+      reasonLabel: null,
       proof: proofText,
     };
   }
 
   const reason = reasonOf(proof.bound, proof.lower_bound, names);
-  const sentence = `${finish} The deadline is day ${deadline_day}.`;
+  const sentence = `${earliest} The deadline is day ${deadline_day}.`;
   if (end_day > deadline_day) {
     const late = days(end_day - deadline_day);
     return {
       tone: "bad",
       label: `${late} late`,
-      headline: `${late} late`,
+      headline: `Will finish ${late} late`,
       sentence,
       reason,
+      reasonLabel: reason ? "Why" : null,
       proof: proofText,
     };
   }
   return {
     tone: "good",
     label: "On time",
-    headline:
-      end_day < deadline_day
-        ? `On time, ${spareText(deadline_day - end_day)}`
-        : "On time, with no days to spare",
+    headline: `On time, ${spareText(deadline_day - end_day)}`,
     sentence,
     reason,
+    reasonLabel: reason ? "Why" : null,
     proof: proofText,
   };
 }

@@ -18,7 +18,7 @@ type Props = {
   onChange: (draft: Draft) => void;
 };
 
-/** The timeline by person and the task table, with the switch into correcting. */
+/** Who does what and when, with the switch into changing tasks. */
 export function ScheduleSection(props: Props) {
   const { draft, schedule, editing, active } = props;
   const cycleIds = new Set(schedule.status === "cycle" ? schedule.cycle_groups.flat() : []);
@@ -26,37 +26,40 @@ export function ScheduleSection(props: Props) {
   return (
     <section aria-label="Schedule" className={styles.section}>
       <div className={styles.sectionHead}>
-        <h2 className={styles.label}>Schedule</h2>
-        <div className={styles.headActions}>
-          {editing && (
-            <label className={styles.deadlineEdit}>
-              Deadline day
-              <input
-                type="number"
-                min={0}
-                className={styles.input}
-                value={draft.deadline_day ?? ""}
-                placeholder="none"
-                onChange={(e) => {
-                  const value = e.target.value === "" ? null : Number(e.target.value);
-                  if (value === null || (Number.isInteger(value) && value >= 0)) {
-                    props.onChange({ tasks: draft.tasks, deadline_day: value });
-                  }
-                }}
-              />
-            </label>
-          )}
-          <button
-            type="button"
-            className={editing ? styles.quiet : styles.action}
-            aria-pressed={editing}
-            onClick={props.onToggleEditing}
-          >
-            <Icon name="edit" />
-            {editing ? "Done correcting" : "Correct the review"}
-          </button>
-        </div>
+        <h2 className={styles.sectionTitle}>Who does what, and when</h2>
+        <button
+          type="button"
+          className={editing ? styles.secondary : styles.primary}
+          aria-pressed={editing}
+          onClick={props.onToggleEditing}
+        >
+          <Icon name={editing ? "check" : "edit"} size={18} />
+          {editing ? "Done" : "Change tasks"}
+        </button>
       </div>
+      <p className={styles.sectionIntro}>
+        {editing
+          ? "Change who does a task, how many days it takes, or what it waits for. The dates update as you type."
+          : "If you know something the plan doesn't say, change the tasks and see the new dates."}
+      </p>
+      {editing && (
+        <label className={styles.deadlineEdit}>
+          Deadline (day)
+          <input
+            type="number"
+            min={0}
+            className={styles.input}
+            value={draft.deadline_day ?? ""}
+            placeholder="none"
+            onChange={(e) => {
+              const value = e.target.value === "" ? null : Number(e.target.value);
+              if (value === null || (Number.isInteger(value) && value >= 0)) {
+                props.onChange({ tasks: draft.tasks, deadline_day: value });
+              }
+            }}
+          />
+        </label>
+      )}
       {schedule.status === "scheduled" ? (
         <Timeline
           schedule={schedule}
@@ -67,8 +70,9 @@ export function ScheduleSection(props: Props) {
         />
       ) : (
         <p className={styles.blocked}>
-          No schedule: some tasks wait on each other in a circle. They are marked in the table.
-          Correct one of them to see a schedule.
+          <Icon name="alert" size={20} />
+          No dates can be worked out, because some tasks wait for each other. They are marked in the
+          table below. Change one of them to see the dates.
         </p>
       )}
       <TaskTable

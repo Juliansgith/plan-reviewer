@@ -3,17 +3,17 @@
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  padding: 10px 24px;
+  padding: 14px 24px;
   background: var(--color-background);
-  border-bottom: 1px solid var(--color-border-half);
+  border-bottom: 1px solid var(--color-border);
 }
 
 .brand {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  font-size: var(--text-13);
-  font-weight: 500;
+  gap: 10px;
+  font-size: var(--text-medium);
+  font-weight: 600;
   color: var(--color-text);
   text-decoration: none;
 }
@@ -21,15 +21,15 @@
 .mark {
   display: inline-grid;
   place-items: center;
-  width: 24px;
-  height: 24px;
-  border-radius: 6px;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
   background: var(--color-lime);
   color: var(--color-deep-green);
 }
 
 .org {
-  font-size: var(--text-11);
+  font-size: var(--text-small);
   color: var(--color-text-muted);
 }
 

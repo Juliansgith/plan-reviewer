@@ -1,87 +1,98 @@
 .page {
-  max-width: 1280px;
+  max-width: 1320px;
   margin: 0 auto;
-  padding: 28px 24px 64px;
+  padding: 32px 24px 72px;
 }
 
 .narrow {
-  max-width: 820px;
+  max-width: 880px;
 }
 
 .crumbs {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  margin: 0 0 10px;
-  font-size: var(--text-11);
-  color: var(--color-text-muted);
+  margin: 0 0 14px;
 }
 
 .crumbs a {
   display: inline-flex;
   align-items: center;
-  gap: 2px;
-  color: var(--color-text-muted);
+  gap: 4px;
+  min-height: 40px;
+  padding: 6px 14px 6px 8px;
+  border: 1.5px solid var(--color-border-strong);
+  border-radius: var(--radius-pill);
+  background: var(--color-background);
+  font-size: var(--text-base);
+  font-weight: 600;
+  color: var(--color-deep-green);
   text-decoration: none;
 }
 
 .crumbs a:hover {
-  color: var(--color-deep-green);
+  border-color: var(--color-deep-green);
 }
 
 .meta {
-  margin: 6px 0 20px;
-  font-size: var(--text-12);
+  margin: 8px 0 24px;
+  font-size: var(--text-base);
   color: var(--color-text-muted);
 }
 
 .problem {
-  margin-bottom: 20px;
-  padding: 18px 20px;
+  margin-bottom: 24px;
+  padding: 24px 26px;
   background: var(--color-background);
-  border: 1px solid var(--color-border-half);
-  border-left: 4px solid var(--color-attention);
-  border-radius: 12px;
+  border: 1px solid var(--color-border);
+  border-left: 8px solid var(--color-attention);
+  border-radius: 14px;
+  font-size: var(--text-medium);
 }
 
 .problem.neutral {
-  border-left-color: var(--color-border);
+  border-left-color: var(--color-border-strong);
 }
 
 .problem h2 {
-  margin: 4px 0 8px;
+  margin: 0 0 10px;
+  font-size: var(--text-xl);
 }
 
 .problem ul {
-  margin: 8px 0;
-  padding-left: 18px;
+  margin: 10px 0;
+  padding-left: 22px;
+  font-size: var(--text-base);
 }
 
-.problem code {
-  font-size: var(--text-11);
-  background: var(--color-surface);
-  padding: 1px 4px;
-  border-radius: 4px;
-}
-
-.label {
-  margin: 0;
-  font-size: var(--text-11);
-  font-weight: 600;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
+.small {
+  font-size: var(--text-base);
   color: var(--color-text-muted);
 }
 
+.problem code {
+  font-size: var(--text-small);
+  background: var(--color-surface);
+  padding: 2px 6px;
+  border-radius: 4px;
+  border: 1px solid var(--color-border);
+}
+
+.docTitle {
+  margin: 0 0 8px;
+  font-size: var(--text-large);
+}
+
 .document {
-  padding: 18px 20px;
+  padding: 24px 26px;
   background: var(--color-background);
-  border: 1px solid var(--color-border-half);
-  border-radius: 12px;
+  border: 1px solid var(--color-border);
+  border-radius: 14px;
 }
 
 @media (max-width: 560px) {
   .page {
-    padding: 20px 16px 48px;
+    padding: 20px 16px 56px;
+  }
+  .problem,
+  .document {
+    padding: 18px 16px;
   }
 }

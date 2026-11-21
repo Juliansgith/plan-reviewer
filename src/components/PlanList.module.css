@@ -1,7 +1,14 @@
+.intro {
+  margin: 10px 0 4px;
+  font-size: var(--text-medium);
+  color: var(--color-text);
+  max-width: 60ch;
+}
+
 .meta,
 .empty {
-  margin: 6px 0 20px;
-  font-size: var(--text-12);
+  margin: 4px 0 24px;
+  font-size: var(--text-base);
   color: var(--color-text-muted);
 }
 
@@ -9,69 +16,65 @@
   list-style: none;
   margin: 0;
   padding: 0;
-  background: var(--color-background);
-  border: 1px solid var(--color-border-half);
-  border-radius: var(--radius-card);
-  box-shadow: var(--shadow-faint);
-  overflow: hidden;
-}
-
-.list li + li {
-  border-top: 1px solid var(--color-border-half);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 }
 
 .row {
   display: flex;
   align-items: center;
   gap: 16px;
-  padding: 14px 16px;
+  padding: 20px 22px;
+  background: var(--color-background);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-box);
+  box-shadow: var(--shadow-faint);
   color: inherit;
   text-decoration: none;
 }
 
 .row:hover {
+  border-color: var(--color-border-strong);
   background: var(--color-surface);
 }
 
 .text {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 4px;
   flex: 1;
   min-width: 0;
 }
 
 .title {
-  font-size: var(--text-13);
-  font-weight: 500;
-}
-
-.rowMeta {
-  font-size: var(--text-11);
-  color: var(--color-text-muted);
-}
-
-.figure {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-}
-
-.figureMain {
-  font-size: var(--text-13);
+  font-size: var(--text-medium);
   font-weight: 600;
 }
 
-.figureSub {
-  font-size: var(--text-11);
+.details {
+  font-size: var(--text-base);
   color: var(--color-text-muted);
 }
 
-@media (max-width: 560px) {
+.open {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  font-size: var(--text-base);
+  font-weight: 600;
+  color: var(--color-deep-green);
+}
+
+@media (max-width: 640px) {
   .row {
     flex-wrap: wrap;
+    gap: 12px;
   }
-  .figure {
-    align-items: flex-start;
+  .text {
+    flex-basis: 100%;
+  }
+  .open {
+    margin-left: auto;
   }
 }

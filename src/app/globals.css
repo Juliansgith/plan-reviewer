@@ -1,39 +1,46 @@
-/* WhiteSpace brand tokens, taken from BRAND.md. Components use these
-   variables only; no raw colour values outside this file. */
+/* WhiteSpace brand colours and fonts from BRAND.md, tuned for readability:
+   the people using this are not technical, so text is larger and darker than
+   the brand's quiet defaults, and every control is clearly a control
+   (docs/DECISIONS.md, D13). Components use these variables only. */
 :root {
   --color-background: #ffffff;
   --color-surface: #faf9f5;
   --color-canvas: #f8f7f2;
   --color-text: #2a2622;
-  --color-text-muted: #625950;
+  /* Darker than the brand's #625950: 9.4:1 on white instead of 6.9:1. */
+  --color-text-muted: #4f4740;
   --color-border: #d6d6cd;
-  --color-border-half: rgb(214 214 205 / 50%);
+  /* Borders of controls (inputs, secondary buttons): 3.6:1, enough to see. */
+  --color-border-strong: #8a8378;
+  --color-border-half: #e4e2da;
   --color-primary: #6c962c;
-  --color-primary-tint: rgb(108 150 44 / 10%);
+  --color-primary-tint: rgb(108 150 44 / 12%);
   --color-deep-green: #174736;
+  --color-deep-green-hover: #0f3427;
   --color-lime: #cdeb9b;
   --color-callout: #f3ffdb;
   --color-attention: #cb593b;
-  /* Terracotta darkened just enough for small text to reach WCAG AA (4.9:1 on
-     its tint). The brand value stays for borders, lines and large headings. */
+  /* Terracotta darkened for text: 5.4:1 on white, 4.9:1 on its tint. */
   --color-attention-text: #b04a2e;
-  --color-attention-tint: rgb(203 89 59 / 8%);
-  --color-highlight: rgb(205 235 155 / 70%);
+  --color-attention-tint: rgb(203 89 59 / 9%);
+  --color-highlight: rgb(205 235 155 / 75%);
   --color-highlight-active: #cdeb9b;
 
   --font-sans: "Inter Variable", "Inter", system-ui, sans-serif;
   --font-serif: "Source Serif 4 Variable", "Source Serif 4", Georgia, serif;
 
-  --text-11: 11px;
-  --text-12: 12px;
-  --text-13: 13px;
-  --text-20: 20px;
-  --text-24: 24px;
+  /* Larger than BRAND.md's 11-24 px scale, on purpose. */
+  --text-small: 14px;
+  --text-base: 16px;
+  --text-medium: 18px;
+  --text-large: 22px;
+  --text-xl: 28px;
+  --text-2xl: 32px;
 
-  --radius-card: 8px;
-  --radius-box: 12px;
+  --radius-card: 10px;
+  --radius-box: 14px;
   --radius-pill: 999px;
-  --shadow-faint: 0 1px 2px rgb(42 38 34 / 4%);
+  --shadow-faint: 0 1px 3px rgb(42 38 34 / 7%);
 }
 
 *,
@@ -52,8 +59,8 @@ body {
   background: var(--color-canvas);
   color: var(--color-text);
   font-family: var(--font-sans);
-  font-size: var(--text-12);
-  line-height: 1.5;
+  font-size: var(--text-base);
+  line-height: 1.55;
   font-variant-numeric: tabular-nums;
   -webkit-font-smoothing: antialiased;
 }
@@ -61,17 +68,17 @@ body {
 h1,
 h2 {
   font-family: var(--font-serif);
-  font-weight: 400;
+  font-weight: 500;
   margin: 0;
 }
 
 h1 {
-  font-size: var(--text-24);
-  line-height: 1.25;
+  font-size: var(--text-2xl);
+  line-height: 1.2;
 }
 
 h2 {
-  font-size: var(--text-20);
+  font-size: var(--text-large);
   line-height: 1.3;
 }
 
@@ -85,7 +92,7 @@ button {
 }
 
 :focus-visible {
-  outline: 2px solid var(--color-primary);
+  outline: 3px solid var(--color-deep-green);
   outline-offset: 2px;
 }
 

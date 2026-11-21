@@ -79,9 +79,17 @@ Nora's corrections are sent to `POST /api/schedule`, the endpoint the graders te
 
 Reviews are made offline with `./review` and stored. A public page that calls a paid model on demand invites cost abuse and needs rate limiting and accounts, and every result would need the same verification anyway. The page's AI is the verified review; the corrections loop is deterministic and instant.
 
-## D13. Accessibility wins over exact brand values, by the smallest margin
+## D13. Readable and plain beats quiet and on-brand
 
-axe found that BRAND.md's 70% muted labels (3.4:1) and terracotta small text (3.8:1 on its tint) fail WCAG AA. Labels use muted text at full strength (6.9:1); small terracotta text uses `#B04A2E` (4.9:1). The brand terracotta remains for borders, lines and the large headline, where 3:1 suffices. Every page is scanned in CI.
+The person using this is not technical, so the page must be clear at a glance. Brand colours, fonts and voice stay; where BRAND.md's quiet defaults hurt readability, readability wins:
+
+- Text is larger: 16 px body, 18 px for verdicts and finding titles, instead of the brand's 11 to 13 px.
+- Text is darker: secondary text is `#4F4740` (9.4:1 on white) rather than the brand's 70% muted labels (3.4:1), and small terracotta text is `#B04A2E` (4.9:1 on its tint). The brand terracotta stays for borders, lines and large headings.
+- Controls look like controls: the main action is a solid deep-green button with white text, other actions are outlined, all at least 44 px tall, and inputs have borders of 3.6:1.
+- Status never relies on colour alone: every status has words and an icon ("Will finish 7 days late", "On time, with 3 days to spare", "Can't be scheduled").
+- Wording is plain: "What needs fixing", "See this in the plan", "Change tasks", "Undo all changes", "Days are counted from the committee's kickoff meeting". No model names or technical terms on screen.
+
+axe checks every page against WCAG 2.1 A and AA in CI, on desktop and phone sizes.
 
 ## D14. Lenient content type, strict body
 
