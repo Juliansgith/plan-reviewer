@@ -22,7 +22,9 @@ const child = spawn(process.execPath, [server], {
     NODE_ENV: "production",
     PORT: process.env.PORT ?? "3000",
     HOSTNAME: process.env.BIND_HOST ?? "0.0.0.0",
-    DATA_DIR: process.env.DATA_DIR ?? resolve("data"),
+    // Absolute, because the standalone server changes its working directory
+    // to .next/standalone when it starts.
+    DATA_DIR: resolve(process.env.DATA_DIR ?? "data"),
   },
 });
 child.on("exit", (code) => process.exit(code ?? 0));

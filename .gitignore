@@ -6,6 +6,7 @@ next-env.d.ts
 *.tsbuildinfo
 
 # Test output
+e2e/.data/
 coverage/
 playwright-report/
 test-results/

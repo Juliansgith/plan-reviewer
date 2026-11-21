@@ -19,10 +19,11 @@ export default defineConfig({
     { name: "phone", use: { ...devices["Pixel 7"] } },
   ],
   webServer: {
-    command: "npx tsx e2e/make-data.ts test-results/e2e-data && node scripts/start.mjs",
+    // Seeded outside test-results/, which Playwright clears when a run starts.
+    command: "npx tsx e2e/make-data.ts e2e/.data && node scripts/start.mjs",
     url: `http://127.0.0.1:${PORT}/api/health`,
     reuseExistingServer: false,
     timeout: 120_000,
-    env: { PORT: String(PORT), BIND_HOST: "127.0.0.1", DATA_DIR: "test-results/e2e-data" },
+    env: { PORT: String(PORT), BIND_HOST: "127.0.0.1", DATA_DIR: "e2e/.data" },
   },
 });

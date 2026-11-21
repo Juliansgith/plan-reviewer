@@ -3,14 +3,14 @@
 // hand-checked model answers (no API key needed). Lantern Festival keeps the
 // starter's stored review, which fails verification, to test that state.
 //
-//   npx tsx e2e/make-data.ts <folder>
+//   npx tsx e2e/make-data.ts [folder]   (default e2e/.data)
 
 import { copyFileSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { reviewPlan } from "../src/core/review/review";
 import type { ChatClient } from "../src/core/review/types";
 
-const out = process.argv[2] ?? "test-results/e2e-data";
+const out = process.argv[2] ?? "e2e/.data";
 rmSync(out, { recursive: true, force: true });
 mkdirSync(join(out, "plans"), { recursive: true });
 mkdirSync(join(out, "reviews"), { recursive: true });
