@@ -233,9 +233,22 @@ export function assembleReview(
     );
   };
   // Sums of days and verdicts on the schedule are code's to state: the model
-  // gets them wrong, and the page leads with the proven answer.
+  // gets them wrong, and the page leads with the proven answer. Two nets: a
+  // model finding that quotes the deadline code has settled is dropped
+  // whatever it says, and so is one whose words state a sum or a verdict.
+  const deadlineSpans: Span[] =
+    deadline_day === null
+      ? []
+      : [...statements, spanOf(deadline_quote)].filter((s): s is Span => s !== null);
+  const judgesTheSchedule = (finding: (typeof answer.findings)[number]) => {
+    const span = spanOf(finding.quote);
+    return (
+      (!!span && deadlineSpans.some((d) => overlaps(d, span))) ||
+      claimsScheduleVerdict(`${finding.title}. ${finding.detail}`)
+    );
+  };
   const modelFindings: ReviewFinding[] = answer.findings
-    .filter((finding) => !claimsScheduleVerdict(`${finding.title}. ${finding.detail}`))
+    .filter((finding) => !judgesTheSchedule(finding))
     .filter((finding) => !isDuplicate(finding))
     .map((finding) => ({ ...finding, source: "model" as const, kind: "model" as const }));
 

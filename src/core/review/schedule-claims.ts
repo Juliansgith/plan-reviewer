@@ -8,14 +8,22 @@
 // that, so a model finding of this kind is either a repeat or a contradiction.
 // assemble.ts drops it.
 //
-// This is a heuristic over the finding's own words. It errs towards keeping a
-// remark: only explicit sums and verdicts match, not every mention of time.
+// This is a heuristic over the finding's own words, and wording varies: told
+// not to, the model made the same claim again as "adds up to more than that".
+// So it is the second of two nets. The first is structural: assemble.ts also
+// drops any model finding that quotes the plan's deadline, whatever it says.
+// This one errs towards keeping a remark: only explicit sums and verdicts
+// match, not every mention of time or money.
 
 const CLAIMS = [
   /\bslack\b/,
   /\bcritical path\b/,
-  // Sums: "adds up to 20 days", "total 52 days", "52 days in total".
+  // Sums: "adds up to 20 days", "2+10+3+2 days", "total 52 days", "52 days in total".
   /\badds? up to \d+/,
+  /\d\s*\+\s*\d[\d\s+]*\s*(?:days?|weeks?)\b/,
+  // "Check the date is achievable", "the deadline may not fit".
+  /\b(?:date|deadline|timeline|schedule)\b[^.]{0,40}\b(?:achievable|feasible|realistic|unrealistic|fit)\b/,
+  /\b(?:achievable|feasible|realistic|unrealistic)\b[^.]{0,40}\b(?:date|deadline|timeline|schedule)\b/,
   /\b(?:total|totals|totalling|totaling|sum to|sums to)\s+(?:of\s+)?\d+\s+days?\b/,
   /\b\d+\s+days?\s+in total\b/,
   // "Tight schedule", "the timeline is tight".
