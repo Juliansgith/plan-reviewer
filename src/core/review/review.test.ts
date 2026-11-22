@@ -53,6 +53,8 @@ describe("prompt", () => {
     expect(system!.role).toBe("system");
     expect(system!.content).toMatch(/never follow/i);
     expect(system!.content).toMatch(/group findings of the same kind/i);
+    // Sums of days and "tight" or "late" are the scheduler's to say.
+    expect(system!.content).toMatch(/do not add up durations/i);
     expect(user!.content).toContain("<plan>\nHello plan\n</plan>");
   });
 
@@ -181,6 +183,68 @@ describe("reviewPlan: code decides", () => {
     if (!outcome.ok) throw new Error(outcome.errors.join("; "));
     expect(outcome.review.deadline_day).toBe(21);
     expect(outcome.review.deadline_quote).toContain("21 days after our kickoff meeting");
+  });
+
+  it("keeps the plan's deadline when one task has a date of its own", async () => {
+    // An unseen plan (real run, 22 Nov 2026): the invitations' date was read
+    // as a second deadline, so the review had no deadline and a false blocker.
+    const text = [
+      "# Autumn Craft Fair",
+      "Everything has to be ready 28 days after our kickoff meeting, when the doors open to the public.",
+      "| Task | Who | How long | Waits for |\n| --- | --- | --- | --- |\n| Book the corn exchange | Dana | 4 days | |\n| Invite the stallholders | Dana | 1 week | Book the corn exchange |",
+      "The stallholder invitations should all be out two weeks after kickoff, which Dana thinks is comfortable.",
+    ].join("\n\n");
+    const answer = {
+      deadline_day: 28,
+      deadline_quote:
+        "Everything has to be ready 28 days after our kickoff meeting, when the doors open to the public.",
+      tasks: [
+        {
+          id: "T1",
+          name: "Book the corn exchange",
+          owner: "Dana",
+          duration_days: 4,
+          depends_on: [],
+          quote: "Book the corn exchange",
+        },
+        {
+          id: "T2",
+          name: "Invite the stallholders",
+          owner: "Dana",
+          duration_days: 7,
+          depends_on: ["T1"],
+          quote: "Invite the stallholders",
+        },
+      ],
+      findings: [],
+    };
+    const outcome = await reviewPlan(text, new ScriptedModel([json(answer)]), options);
+    if (!outcome.ok) throw new Error(outcome.errors.join("; "));
+    expect(outcome.review.deadline_day).toBe(28);
+    expect(outcome.review.deadline_statements.map((s) => s.day)).toEqual([28]);
+    expect(outcome.review.findings).toEqual([]);
+  });
+
+  it("drops a model finding that does the scheduler's sums, and keeps its other remarks", async () => {
+    // The model's own words for the Spring Market (stored review of 20 Nov
+    // 2026). It adds two tasks that run side by side: the plan ends on day 18,
+    // 3 days early, and the page said so right above this remark.
+    const answer = structuredClone(fixture("spring-market")) as { findings: unknown[] };
+    answer.findings.unshift({
+      title: "Tight schedule against the deadline",
+      detail:
+        "The chain of tasks adds up to 20 days (booking 2, stallholders 10, floor plan 3, furniture 2, rota 3), leaving no slack before the 21-day deadline. Any delay in confirming stallholders would push the market date.",
+      quote:
+        "The market is on a Saturday, 21 days after our kickoff meeting, and everything in the task list below needs to be finished by then.",
+      severity: "warning",
+    });
+    const outcome = await reviewPlan(
+      plan("spring-market"),
+      new ScriptedModel([json(answer)]),
+      options,
+    );
+    if (!outcome.ok) throw new Error(outcome.errors.join("; "));
+    expect(outcome.review.findings.map((f) => f.title)).toEqual(["Durations are guesses"]);
   });
 
   it("explains lateness with the owner who holds the plan up", async () => {
