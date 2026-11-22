@@ -43,6 +43,8 @@ Evidence, 20 Nov 2026, three sample plans per run, 51 facts per run:
 
 Two findings came out of this. First, reasoning hurt: DeepSeek reasoned until it used up its whole output budget in half of the calls, whatever the effort level or token cap, so reasoning is off by default (`REVIEW_REASONING` turns it back on), and an answer cut off at the limit is retried from the start rather than repaired. Second, without reasoning the model sometimes missed a dependency stated only in the notes, which is where the Harbour Run circle hides; asking it to list every dependency statement first fixed that (D6). The free Nemotron model remains a documented no-cost fallback.
 
+On 22 Nov 2026 the prompt gained one line (do not add up durations, D6). Re-run on the real model: 100% of the 51 facts in 5 of 5 runs, one call per review, 4 to 21 s.
+
 The client is plain `fetch` (no SDK): one endpoint, and retries, error classes and key redaction are all visible in one file. `provider.require_parameters` makes OpenRouter route only to providers that honour the JSON schema.
 
 ## D6. The model proposes, code decides
@@ -51,9 +53,10 @@ The model does what only a model can: read a plan written in prose and tables an
 
 - Shape, unique ids and known dependencies (D3).
 - Every quote must be word for word in the plan after collapsing whitespace, the contract's rule. A quote that only lost markdown emphasis is repaired from the plan's own words; anything else goes back to the model for a repair round, up to three calls. A task quote that never verifies fails the review (exit 1); a finding quote that never verifies is removed and marked `quote_removed`.
-- The deadline is settled by code from the plan's own statements ("21 days after our kickoff meeting", "five weeks after kickoff", "day 45"). Two different stated days mean the plan does not clearly state one, so `deadline_day` is null and a blocker finding quotes both.
+- The deadline is settled by code from the plan's own statements ("21 days after our kickoff meeting", "five weeks after kickoff", "day 45"). Two different stated days mean the plan does not clearly state one, so `deadline_day` is null and a blocker finding quotes both. A dated sentence counts only when it speaks for the whole plan ("everything", "all the tasks", "our deadline") or gives the day of the event itself ("the market is on", "the fair opens"); a date for one task does not. Revised 22 Nov 2026: on a plan we had not seen, "invitations out two weeks after kickoff" was read as a second deadline, and a plan that was on time lost its deadline.
 - Dependencies come with evidence. The model first lists every place the plan says one task waits for another, with the exact quote; code verifies each quote and checks the task list agrees. A missing dependency goes back for repair, and on the last attempt code adds it when both task names match one task each. The review keeps the evidence (`dependency_evidence`).
 - Lateness, circles, missing owners and look-alike owner names are computed by code and reported as findings marked "Checked by code". The model is told not to report them; when it does anyway, its finding is dropped if it quotes the same evidence and is about the same thing, while a remark on another issue that quotes the same text is kept.
+- Sums of days and verdicts on the schedule are code's alone (added 22 Nov 2026). The model added two tasks that run side by side and reported "20 days, no slack" for the Spring Market, which ends on day 18; told not to, it said the same in other words. So a model finding is dropped when it quotes the deadline code has settled, whatever it says, or when its words state a sum of days or a verdict (`schedule-claims.ts`, a heuristic). Given up: a model remark about the deadline sentence that is not about timing.
 
 ## D7. Prompt injection: four layers
 

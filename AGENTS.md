@@ -31,7 +31,7 @@ All of `npm run check` must pass with zero warnings. CI also runs the browser te
 ## Where things are
 
 - Scheduler: `src/core/schedule/` (graph, bounds, heuristics, solve, verify). Method and evidence: docs/SCHEDULER.md.
-- Review pipeline: `src/core/review/` (prompt, check, assemble, signals, review). OpenRouter client: `src/server/openrouter.ts`. Review endpoint for `./review` without a key: `src/server/api/review.ts`; its controls: docs/SECURITY.md.
+- Review pipeline: `src/core/review/` (prompt, check, assemble, signals, schedule-claims, review). OpenRouter client: `src/server/openrouter.ts`. Review endpoint for `./review` without a key: `src/server/api/review.ts`; its controls: docs/SECURITY.md.
 - Page: `src/app/` (pages and routes, thin), `src/components/`, `src/ui/` (logic, tested without React).
 - Styling: CSS variables in `src/app/globals.css` from BRAND.md; components use the variables only.
 

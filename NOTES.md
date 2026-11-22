@@ -19,7 +19,7 @@ Uploading and reviewing new plans from the page ([D12](docs/DECISIONS.md): a pub
 
 ## What is not ready
 
-- The deadline and instruction detectors are deliberate heuristics; an unusual phrasing falls back to the model's reading, which is still verified.
+- The deadline, instruction and schedule-claim detectors are deliberate heuristics; an unusual phrasing falls back to the model's reading, which is still verified. A re-check on 22 Nov found and fixed two faults, test-first ([D6](docs/DECISIONS.md)): one task's date was read as a second deadline on an unseen plan, and the Spring Market review carried a model remark with wrong sums.
 - On rare dense plans the search stops before proving optimality; the answer then says `optimal: false` and shows the gap.
 - Model quality is measured on the three sample plans only (`npm run eval`); unseen plans may phrase things the prompt does not anticipate.
 
