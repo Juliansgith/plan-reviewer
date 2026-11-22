@@ -6,7 +6,8 @@
 //   dependencies, lateness and its cause, conflicting or missing deadlines,
 //   instructions to the reviewer, tasks with no owner, owner names that look
 //   like the same person;
-// - drops model findings that quote the same text as a code finding;
+// - drops model findings that quote the same text as a code finding, and
+//   those that state sums of days or a verdict on the schedule;
 // - orders findings by severity, code findings first within each level.
 
 import { parseReview } from "../contracts";
@@ -14,6 +15,7 @@ import { buildGraph, cyclicGroups, findCycle } from "../schedule/graph";
 import { scheduleTasks } from "../schedule/schedule";
 import { locateQuote, type Span } from "../text";
 import type { CheckedAnswer } from "./check";
+import { claimsScheduleVerdict } from "./schedule-claims";
 import { findDeadlineStatements, findInstructionsToReviewer, quoteStatesDay } from "./signals";
 import type { ReviewFinding, StoredReview } from "./types";
 
@@ -230,7 +232,10 @@ export function assembleReview(
         code.covers.some((c) => overlaps(c, span)) && (!code.absorbs || code.absorbs.test(text)),
     );
   };
+  // Sums of days and verdicts on the schedule are code's to state: the model
+  // gets them wrong, and the page leads with the proven answer.
   const modelFindings: ReviewFinding[] = answer.findings
+    .filter((finding) => !claimsScheduleVerdict(`${finding.title}. ${finding.detail}`))
     .filter((finding) => !isDuplicate(finding))
     .map((finding) => ({ ...finding, source: "model" as const, kind: "model" as const }));
 

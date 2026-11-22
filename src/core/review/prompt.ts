@@ -34,6 +34,7 @@ Findings
 - title: a few words in sentence case. detail: one or two plain sentences on what is wrong and why it matters. quote: exact text from the plan that shows it, or null. severity: "blocker" if the plan cannot be signed off as written, "warning" if it should be fixed or clarified, "note" if it is minor.
 - Group findings of the same kind into one, for example all tasks that appear only in the notes, or all dependencies the table leaves out: name each one in the detail and quote the first. Aim for six findings or fewer; the officer must be able to see at once which ones matter.
 - Do not report whether the plan meets its deadline, circular dependencies or tasks without an owner. Code checks those.
+- Do not add up durations, and do not say that the schedule is tight, late, on time or has slack. Code works out the schedule, and tasks of different people run side by side.
 - Be plain, specific and calm. No exclamation marks.`;
 
 const nullable = (type: string) => ({ type: [type, "null"] });
