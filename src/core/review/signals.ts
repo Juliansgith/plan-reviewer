@@ -3,8 +3,10 @@
 //
 // - findInstructionsToReviewer: sentences that try to tell the reviewer what
 //   to report. The Harbour Run plan contains one; unseen plans may too.
-// - findDeadlineStatements: sentences that state the finish day relative to
-//   kickoff. Two different days mean the plan does not clearly state one.
+// - findDeadlineStatements: sentences that state the finish day for the whole
+//   plan, or the day of the event, relative to kickoff. Two different days
+//   mean the plan does not clearly state one. A date for a single task is not
+//   a deadline statement.
 //
 // Both are heuristics. They err towards precision: a missed signal falls back
 // to the model's own reading, which is still verified against the plan.
@@ -96,8 +98,60 @@ const RELATIVE_TO_KICKOFF = new RegExp(
 );
 const DAY_NUMBER =
   /\b(?:by|on|of|until|before)\s+(?:the\s+(?:evening|morning|afternoon|night)\s+of\s+)?day\s+(\d+)\b/gi;
-const ABOUT_THE_DEADLINE =
-  /\b(?:kick-?\s?off|deadline|must be|has to be|have to be|needs? to be|done by|finished by|complete|everything|event|festival|market|run|fair|show)\b/i;
+
+// A dated sentence states the plan's deadline only when it speaks for the
+// whole plan ("everything ... by", "all the tasks", "our deadline is") or
+// gives the day of the event itself ("the market is on ...", "the fair
+// opens ..."). A date for one task ("invitations out two weeks after
+// kickoff", "the road closure must be approved by day 19") is that task's
+// own date: counting it would invent a second deadline and a false conflict.
+const WHOLE_PLAN =
+  /\beverything\b|\ball\s+(?:of\s+)?(?:the\s+|our\s+|these\s+)?(?:tasks|jobs|work|preparations)\b|\b(?:whole|entire)\s+(?:plan|event|project)\b|\bdeadline\b(?!\s+(?:for|to)\b)/i;
+const EVENT_WORDS = [
+  "event",
+  "festival",
+  "market",
+  "run",
+  "race",
+  "fair",
+  "fete",
+  "fête",
+  "show",
+  "parade",
+  "concert",
+  "carnival",
+  "gala",
+  "regatta",
+  "walk",
+  "ride",
+  "party",
+  "celebration",
+  "tournament",
+  "opening",
+  "launch",
+];
+const NOT_AN_EVENT_NAME = new Set([
+  "plan",
+  "proposal",
+  "committee",
+  "council",
+  "the",
+  "and",
+  "for",
+]);
+
+/** Matches "the <event> is / opens / takes place ...", for common event words and the plan's own. */
+function eventDayPattern(plan: string): RegExp {
+  // The last word of the title is usually what the committee calls the event:
+  // "Spring Market", "Lantern Festival", "Duck Derby".
+  const title = /^#\s+(.+)$/m.exec(plan)?.[1] ?? "";
+  const named = (title.match(/\p{L}{3,}/gu) ?? []).pop()?.toLowerCase();
+  const words = named && !NOT_AN_EVENT_NAME.has(named) ? [...EVENT_WORDS, named] : EVENT_WORDS;
+  return new RegExp(
+    `\\b(?:the|our|this year's)\\s+(?:[\\p{L}'’-]+\\s+){0,3}?(?:${words.join("|")})\\s+(?:itself\\s+)?(?:is|are|will be|takes place|will take place|is held|will be held|happens|opens|starts|begins|goes ahead)\\b`,
+    "iu",
+  );
+}
 
 function readNumber(captured: string): number | null {
   const whole = parseNumberWord(captured);
@@ -109,18 +163,18 @@ function readNumber(captured: string): number | null {
 export function findDeadlineStatements(plan: string): Statement[] {
   const injected = findInstructionsToReviewer(plan);
   const statements: Statement[] = [];
+  const eventDay = eventDayPattern(plan);
   for (const sentence of splitSentences(plan)) {
     if (injected.some((span) => sentence.start < span.end && span.start < sentence.end)) continue;
     const text = collapseWhitespace(sentence.text);
+    if (!WHOLE_PLAN.test(text) && !eventDay.test(text)) continue;
     const days = new Set<number>();
     for (const match of text.matchAll(RELATIVE_TO_KICKOFF)) {
       const count = readNumber(match[1]!);
       if (count !== null && count > 0)
         days.add(match[2]!.toLowerCase().startsWith("week") ? count * 7 : count);
     }
-    if (ABOUT_THE_DEADLINE.test(text)) {
-      for (const match of text.matchAll(DAY_NUMBER)) days.add(Number(match[1]));
-    }
+    for (const match of text.matchAll(DAY_NUMBER)) days.add(Number(match[1]));
     for (const day of days) {
       statements.push({ day, quote: text.trim(), start: sentence.start, end: sentence.end });
     }
