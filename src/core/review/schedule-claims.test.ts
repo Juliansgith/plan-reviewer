@@ -7,6 +7,10 @@ describe("claimsScheduleVerdict", () => {
   // day 18, with 3 days to spare.
   it.each([
     "Tight schedule against the deadline. The chain of tasks adds up to 20 days (booking 2, stallholders 10, floor plan 3, furniture 2, rota 3), leaving no slack before the 21-day deadline.",
+    // A second real answer for the same plan, after the model was told not to (22 Nov 2026).
+    "Deadline may not fit the task list. The plan says the market is 21 days after kickoff, but the task table alone adds up to more than that (2+10+3+2 days on the longest chain, plus the 1-week printing run on Leila's side). The committee should check the date is achievable or move the market.",
+    "The tasks take 5 + 14 + 5 days one after another.",
+    "The committee should check the deadline is achievable.",
     "Plan will miss the deadline. The work finishes after the deadline.",
     "The plan is 4 days late.",
     "Ruth's tasks total 52 days, so the festival cannot be ready in time.",
@@ -26,6 +30,8 @@ describe("claimsScheduleVerdict", () => {
     "Durations are guesses. The committee says the durations are its best guess, so the schedule has little room for error.",
     "Pitch fees and float handling not scheduled. Martin will take pitch fees and Joan will sort out the float, but neither is a task with a duration.",
     "Stallholders who book late have no pitch.",
+    "Budget does not add up. The costs listed add up to more than the £470 set aside.",
+    "Sponsorship target may not cover costs. A shortfall would delay the lantern materials and the finale frame.",
   ])("leaves other remarks alone: %j", (text) => {
     expect(claimsScheduleVerdict(text)).toBe(false);
   });

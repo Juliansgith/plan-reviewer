@@ -247,6 +247,38 @@ describe("reviewPlan: code decides", () => {
     expect(outcome.review.findings.map((f) => f.title)).toEqual(["Durations are guesses"]);
   });
 
+  it("drops any model finding that quotes the deadline once code has settled it", async () => {
+    // Wording cannot be relied on. With the first filter in place the model
+    // made the same wrong claim in new words, as a blocker (real run, 22 Nov
+    // 2026). What the deadline sentence means for the plan is the scheduler's
+    // answer, so a model remark that quotes it is dropped whatever it says.
+    const deadlineSentence =
+      "The market is on a Saturday, 21 days after our kickoff meeting, and everything in the task list below needs to be finished by then.";
+    const answer = structuredClone(fixture("spring-market")) as { findings: unknown[] };
+    answer.findings.unshift(
+      {
+        title: "Deadline may not fit the task list",
+        detail:
+          "The plan says the market is 21 days after kickoff, but the task table alone adds up to more than that (2+10+3+2 days on the longest chain, plus the 1-week printing run on Leila's side). The committee should check the date is achievable or move the market.",
+        quote: deadlineSentence,
+        severity: "blocker",
+      },
+      {
+        title: "Three weeks is ambitious",
+        detail: "Thirty stalls is a lot to arrange.",
+        quote: "21 days after our kickoff meeting",
+        severity: "warning",
+      },
+    );
+    const outcome = await reviewPlan(
+      plan("spring-market"),
+      new ScriptedModel([json(answer)]),
+      options,
+    );
+    if (!outcome.ok) throw new Error(outcome.errors.join("; "));
+    expect(outcome.review.findings.map((f) => f.title)).toEqual(["Durations are guesses"]);
+  });
+
   it("explains lateness with the owner who holds the plan up", async () => {
     const text =
       "# Fair\n\nEverything must be done by day 10.\n\nRuth books the hall (5 days), the band (5 days) and the food (5 days).";
